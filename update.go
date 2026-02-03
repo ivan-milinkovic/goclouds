@@ -1,10 +1,7 @@
 package main
 
 import (
-	"math"
 	"sync"
-
-	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func update(img *ImageTarget, camera *Camera) {
@@ -57,8 +54,9 @@ func update(img *ImageTarget, camera *Camera) {
 					ray := camera.MakeRay(x, y, img.W, img.H)
 					colorf := march(&ray, &sphere, &light)
 
-					mod := Vec3Fill(math.Sin(rl.GetTime() * 4)).Add(Vec3Fill(1))
-					colorf = colorf.Mul(mod)
+					// GetTime is extremelly slow duw to system calls
+					// mod := Vec3Fill(math.Sin(rl.GetTime() * 4)).Add(Vec3Fill(1))
+					// colorf = colorf.Mul(mod)
 					p := pixel_from_fcolor(colorf)
 					img.Pixels[y*img.W+x] = p
 				}
