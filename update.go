@@ -1,25 +1,15 @@
 package main
 
 import (
+	"runtime"
 	"sync"
 )
 
 func update(img *ImageTarget, camera *Camera) {
-	// for i := range img.W * img.H {
-	// 	(*img).Pixels[i].B = byte(255 * math.Sin(rl.GetTime()*2))
-	// }
-
 	sphere := Sphere{
 		C: Vec3{0, 0, -2},
 		R: 1,
 	}
-
-	// ray := Ray{
-	// 	origin: Vec3Fill(0),
-	// 	dir:    Vec3Make(0, 0, -1),
-	// }
-	// march(&ray, &sphere)
-	// panic(123)
 
 	light := DirectionalLight{
 		dir: Vec3Make(-1.5, 1.5, 0.75).Normalized(),
@@ -42,8 +32,8 @@ func update(img *ImageTarget, camera *Camera) {
 	// Multi-goroutine
 	var wg sync.WaitGroup
 	y_mark := 0 // run a single goroutine with data starting from from this index
-	var dH = 10 // increment on the y axis for each goroutine
-	// var dH := img.H / runtime.NumCPU()
+	// var dH = 10 // increment on the y axis for each goroutine
+	dH := img.H / runtime.NumCPU()
 
 	for y_mark < img.H {
 		wg.Add(1)
