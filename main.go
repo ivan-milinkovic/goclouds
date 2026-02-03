@@ -18,8 +18,8 @@ type ImageTarget struct {
 }
 
 func main() {
-	screen_w := 200
-	screen_h := 200
+	screen_w := 640
+	screen_h := 480
 	rl.InitWindow(int32(screen_w), int32(screen_h), "goclouds")
 
 	pixel_count := screen_w * screen_h

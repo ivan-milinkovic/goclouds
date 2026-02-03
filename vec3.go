@@ -24,8 +24,8 @@ func (v Vec3) LenSq() float64 {
 func (v Vec3) Scale(s float64) Vec3 {
 	return Vec3{
 		X: v.X * s,
-		Y: v.X * s,
-		Z: v.X * s,
+		Y: v.Y * s,
+		Z: v.Z * s,
 	}
 }
 
@@ -45,8 +45,8 @@ func (v Vec3) Sub(v2 Vec3) Vec3 {
 	}
 }
 
-func (v *Vec3) Dot(v2 *Vec3) float64 {
-	return (*v).X*(*v2).X + (*v).Y*(*v2).Y + (*v).Z*(*v2).Z
+func (v *Vec3) Dot(v2 Vec3) float64 {
+	return (*v).X*v2.X + (*v).Y*v2.Y + (*v).Z*v2.Z
 }
 
 func (v Vec3) Normalized() Vec3 {
@@ -70,9 +70,17 @@ func VRotate(v *Vec3, axis *Vec3, rad float64) Vec3 {
 	v1 := axis.Cross(v)
 	term2 := v1.Scale(math.Sin(rad))
 
-	v2 := axis.Scale(axis.Dot(v))
+	v2 := axis.Scale(axis.Dot(*v))
 	term3 := v2.Scale(1 - math.Cos(rad))
 
 	v3 := term1.Add(term2)
 	return v3.Add(term3)
+}
+
+func Vec3Fill(v float64) Vec3 {
+	return Vec3{X: v, Y: v, Z: v}
+}
+
+func Vec3Make(x, y, z float64) Vec3 {
+	return Vec3{X: x, Y: y, Z: z}
 }
