@@ -45,6 +45,14 @@ func (v Vec3) Sub(v2 Vec3) Vec3 {
 	}
 }
 
+func (v Vec3) Mul(v2 Vec3) Vec3 {
+	return Vec3{
+		X: v.X * v2.X,
+		Y: v.Y * v2.Y,
+		Z: v.Z * v2.Z,
+	}
+}
+
 func (v *Vec3) Dot(v2 Vec3) float64 {
 	return (*v).X*v2.X + (*v).Y*v2.Y + (*v).Z*v2.Z
 }

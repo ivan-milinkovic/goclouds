@@ -1,5 +1,12 @@
 package main
 
+import (
+	"math"
+	"sync"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
+
 func update(img *ImageTarget, camera *Camera) {
 	// for i := range img.W * img.H {
 	// 	(*img).Pixels[i].B = byte(255 * math.Sin(rl.GetTime()*2))
@@ -9,12 +16,6 @@ func update(img *ImageTarget, camera *Camera) {
 		C: Vec3{0, 0, -2},
 		R: 1,
 	}
-
-	// ray := Ray{origin: Vec3{0, 0, 1}, dir: Vec3{0, 0, -1}}
-	// ray_in_sphere_space := ray.origin.Sub(sphere.C)
-	// sdf := sdfSphere(ray_in_sphere_space, sphere.R)
-	// println(sdf)
-	// panic(123)
 
 	// ray := Ray{
 	// 	origin: Vec3Fill(0),
@@ -27,15 +28,46 @@ func update(img *ImageTarget, camera *Camera) {
 		dir: Vec3Make(-1.5, 1.5, 0.75).Normalized(),
 	}
 
-	for y := range img.H {
-		for x := range img.W {
-			ray := camera.MakeRay(x, y, img.W, img.H)
-			colorf := march(&ray, &sphere, &light)
+	// Single-threaded
+	// for y := range img.H {
+	// 	for x := range img.W {
+	// 		ray := camera.MakeRay(x, y, img.W, img.H)
+	// 		colorf := march(&ray, &sphere, &light)
 
-			p := pixel_from_fcolor(colorf)
-			img.Pixels[y*img.W+x] = p
-		}
+	// 		mod := Vec3Fill(math.Sin(rl.GetTime() * 4)).Add(Vec3Fill(1))
+	// 		colorf = colorf.Mul(mod)
+	// 		p := pixel_from_fcolor(colorf)
+	// 		img.Pixels[y*img.W+x] = p
+	// 	}
+	// }
+	// fmt.Printf("Done all, frame %v\n", frame_id)
+
+	// Multi-goroutine
+	var wg sync.WaitGroup
+	y_mark := 0 // run a single goroutine with data starting from from this index
+	var dH = 10 // increment on the y axis for each goroutine
+	// var dH := img.H / runtime.NumCPU()
+
+	for y_mark < img.H {
+		wg.Add(1)
+		go func(y_mark int, img *ImageTarget) {
+			end := min(y_mark+dH, img.H)
+			for y := y_mark; y < end; y++ {
+				for x := range img.W {
+					ray := camera.MakeRay(x, y, img.W, img.H)
+					colorf := march(&ray, &sphere, &light)
+
+					mod := Vec3Fill(math.Sin(rl.GetTime() * 4)).Add(Vec3Fill(1))
+					colorf = colorf.Mul(mod)
+					p := pixel_from_fcolor(colorf)
+					img.Pixels[y*img.W+x] = p
+				}
+			}
+			wg.Done()
+		}(y_mark, img)
+		y_mark += dH
 	}
+	wg.Wait()
 }
 
 type Sphere struct {

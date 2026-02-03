@@ -31,8 +31,8 @@ func main() {
 	for i := range pixel_count {
 		image_target.Pixels[i] = Pixel{R: 100, G: 100, B: 100, A: 255}
 	}
-	img_bytes := make([]byte, pixel_count*4) // used to copy to texture
 
+	img_bytes := make([]byte, pixel_count*4) // used to copy to texture
 	img := ImageFromRGBA(image_target.Pixels, &img_bytes, screen_w, screen_h)
 	tex := rl.LoadTextureFromImage(img)
 
@@ -43,7 +43,7 @@ func main() {
 		aspect: float64(screen_w) / float64(screen_h),
 	}
 
-	rl.SetTargetFPS(60)
+	// rl.SetTargetFPS(60)
 
 	for !rl.WindowShouldClose() {
 
@@ -54,7 +54,6 @@ func main() {
 		rl.ClearBackground(rl.Black)
 		rl.UpdateTexture(tex, image_target.Pixels)
 		rl.DrawTexture(tex, 0, 0, rl.White)
-		// rl.DrawText("Hello", 100, 100, 16, rl.White)
 		rl.DrawText(fmt.Sprintf("%v fps, dt: %.0fms", rl.GetFPS(), rl.GetFrameTime()*1000), 10, 10, 16, rl.White)
 		rl.EndDrawing()
 	}
