@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float64]) {
+func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float64], time float64) {
 	sphere := Sphere{
 		C: Vec3{0, 0, -2},
 		R: 1,
@@ -52,7 +52,7 @@ func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float
 				for x := range img.W {
 					ray := camera.MakeRay(x, y, img.W, img.H)
 					// colorf := march_solid(&ray, &sphere, &light)
-					colorf := march_volume(&ray, &sphere, &light, perlin_values)
+					colorf := march_volume(&ray, &sphere, &light, perlin_values, time)
 
 					// GetTime is extremelly slow duw to system calls
 					// mod := Vec3Fill(math.Sin(rl.GetTime() * 4)).Add(Vec3Fill(1))
@@ -107,7 +107,7 @@ func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec
 	}
 }
 
-func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, perlin_values *DataMatrix[float64]) Vec3 {
+func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, perlin_values *DataMatrix[float64], time float64) Vec3 {
 	ray := *starting_ray
 	acc_color := Vec3Fill(0) // accumulated color
 	acc_density := 0.0
@@ -137,8 +137,25 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, pe
 		// when orientations are introduced, the normals will have to be transformed
 		// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
 
-		density := 0.025
+		// sample perlin
+		// perlin_scale := 50.0 * math.Sin(time)
+		perlin_scale := 70.0
+		if time > 1000000 {
+			time = 0.0
+		}
+		perlin_phase := time * 10
+		perlin_x := int(math.Abs(ray.origin.X*perlin_scale + perlin_phase))
+		perlin_y := int(math.Abs(ray.origin.Y*perlin_scale + perlin_phase))
+		perlin_z := int(math.Abs(ray.origin.Z*perlin_scale + perlin_phase))
+		perlin1 := perlin_values.get(perlin_x, perlin_y)
+		perlin2 := perlin_values.get(perlin_y, perlin_z)
+		perlin := (perlin1 + perlin2) * 0.5
+
+		// density := 0.025
+		density := perlin
 		acc_density += density
+
+		// shade
 
 		// no light
 		acc_color = acc_color.AddScalar(density)

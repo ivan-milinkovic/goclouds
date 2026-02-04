@@ -56,7 +56,8 @@ func main() {
 	// rl.SetTargetFPS(60)
 	for !rl.WindowShouldClose() {
 
-		ray_march(&image_target, &camera, perlin_values)
+		t := rl.GetTime()
+		ray_march(&image_target, &camera, perlin_values, t)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Black)
