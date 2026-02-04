@@ -30,10 +30,11 @@ func BenchmarkProf(b *testing.B) {
 		W:      screen_w,
 		H:      screen_h,
 	}
+	perlin_values := make([]float64, 10*10)
 
 	pprof.StartCPUProfile(f)
 	for b.Loop() {
-		ray_march(&image_target, &camera)
+		ray_march(&image_target, &camera, &perlin_values)
 	}
 	pprof.StopCPUProfile()
 }

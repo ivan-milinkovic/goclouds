@@ -20,8 +20,9 @@ type ImageTarget struct {
 func main() {
 	screen_w := 640
 	screen_h := 480
-	rl.InitWindow(int32(screen_w), int32(screen_h), "goclouds")
+	rl.InitWindow(int32(screen_w), int32(screen_h), "goclouds") // must be at the top
 
+	// prepare target image
 	pixel_count := screen_w * screen_h
 	image_target := ImageTarget{
 		Pixels: make([]Pixel, pixel_count),
@@ -32,6 +33,7 @@ func main() {
 		image_target.Pixels[i] = Pixel{R: 20, G: 20, B: 20, A: 255}
 	}
 
+	// prepare texture
 	img_bytes := make([]byte, pixel_count*4) // used to copy to texture
 	img := ImageFromRGBA(image_target.Pixels, &img_bytes, screen_w, screen_h)
 	tex := rl.LoadTextureFromImage(img)
@@ -43,18 +45,18 @@ func main() {
 		aspect: float64(screen_w) / float64(screen_h),
 	}
 
+	// prepare perlin
 	perlin_img := rl.LoadImage("perlin.png")
 	perlin_pixels := rl.LoadImageColors(perlin_img)
-	perlin_values := make([]float64, pixel_count)
+	perlin_values := NewDataMatrix[float64](int(perlin_img.Width), int(perlin_img.Height))
 	for i := range perlin_img.Width * perlin_img.Height {
-		perlin_values[i] = float64(perlin_pixels[i].R) / 255.0
+		perlin_values.values[i] = float64(perlin_pixels[i].R) / 255.0
 	}
 
 	// rl.SetTargetFPS(60)
-
 	for !rl.WindowShouldClose() {
 
-		ray_march(&image_target, &camera)
+		ray_march(&image_target, &camera, perlin_values)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Black)

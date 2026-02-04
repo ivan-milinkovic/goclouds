@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-func ray_march(img *ImageTarget, camera *Camera) {
+func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float64]) {
 	sphere := Sphere{
 		C: Vec3{0, 0, -2},
 		R: 1,
@@ -52,7 +52,7 @@ func ray_march(img *ImageTarget, camera *Camera) {
 				for x := range img.W {
 					ray := camera.MakeRay(x, y, img.W, img.H)
 					// colorf := march_solid(&ray, &sphere, &light)
-					colorf := march_volume(&ray, &sphere, &light)
+					colorf := march_volume(&ray, &sphere, &light, perlin_values)
 
 					// GetTime is extremelly slow duw to system calls
 					// mod := Vec3Fill(math.Sin(rl.GetTime() * 4)).Add(Vec3Fill(1))
@@ -107,7 +107,7 @@ func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec
 	}
 }
 
-func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec3 {
+func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, perlin_values *DataMatrix[float64]) Vec3 {
 	ray := *starting_ray
 	acc_color := Vec3Fill(0) // accumulated color
 	acc_density := 0.0
