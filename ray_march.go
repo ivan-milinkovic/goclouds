@@ -111,6 +111,7 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, pe
 	ray := *starting_ray
 	acc_color := Vec3Fill(0) // accumulated color
 	acc_density := 0.0
+	volume_acc_dist := 0.0 // accumulated distance inside a volume
 	max_jumps := 40
 	jump_count := 0
 	prev_sdf := math.MaxFloat64
@@ -120,12 +121,11 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, pe
 		ray_origin_in_sphere_space := ray.origin.Sub(sphere.C)
 		sdf := sdfSphere(ray_origin_in_sphere_space, sphere.R)
 
-		if sdf > prev_sdf { // break out early if moving away from all objects
-			break
-		}
-		prev_sdf = sdf
-
-		if sdf > 0 {
+		if sdf > 0 { // outside of any volume
+			if sdf > prev_sdf { // break out early if moving away from all objects
+				break
+			}
+			prev_sdf = sdf
 			// advance ray outside of volumes
 			dv := ray.dir.Scale(sdf) // don't attempt to advance by zero
 			ray.origin = ray.origin.Add(dv)
@@ -138,7 +138,6 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, pe
 		// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
 
 		// sample perlin
-		// perlin_scale := 50.0 * math.Sin(time)
 		perlin_scale := 70.0
 		if time > 1000000 {
 			time = 0.0
@@ -150,29 +149,29 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, pe
 		perlin1 := perlin_values.get(perlin_x, perlin_y)
 		perlin2 := perlin_values.get(perlin_y, perlin_z)
 		perlin := (perlin1 + perlin2) * 0.5
-		// perlin := perlin1 * perlin2
-		// perlin3 := perlin_values.get(perlin_x, perlin_z)
-		// perlin := (perlin1 + perlin2 + perlin3) * 0.33
 
 		// density := 0.025
 		density := perlin
 		acc_density += density
 
+		absorbed := math.Exp(-volume_acc_dist * density)
+
 		// shade
 
 		// no light
-		acc_color = acc_color.AddScalar(density)
+		acc_color = acc_color.AddScalar(1 - absorbed)
 
 		// with light
 		// sub_sphere_normal := ray_origin_in_sphere_space.Sub(sphere.C).Normalized()
-		// light_amount := sub_sphere_normal.Dot((*light).dir)
-		// light_scale := acc_density // math.Abs(sdf)
-		// acc_color = acc_color.AddScalar(light_scale * light_amount)
+		// light_factor := sub_sphere_normal.Dot((*light).dir)
+		// light_amount := absorbed * light_factor
+		// acc_color = acc_color.AddScalar(light_amount)
 
 		// advance ray inside volume
 		ds := sphere.R / 8.0
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
+		volume_acc_dist += ds
 	}
 	return acc_color
 }
