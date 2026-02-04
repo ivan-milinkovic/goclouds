@@ -3,6 +3,7 @@ module ivanm/goclouds
 go 1.25.6
 
 require github.com/gen2brain/raylib-go/raylib v0.55.1
+require github.com/aquilax/go-perlin v1.1.0
 
 require (
 	github.com/ebitengine/purego v0.9.1 // indirect

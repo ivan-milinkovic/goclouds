@@ -4,7 +4,11 @@ import (
 	"math"
 	"runtime"
 	"sync"
+
+	"github.com/aquilax/go-perlin"
 )
+
+var perlin_gen = perlin.NewPerlin(2.0, 2.0, 1, 1234)
 
 func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float64], time float64) {
 	sphere := Sphere{
@@ -108,7 +112,7 @@ func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec
 	}
 }
 
-func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, perlin_values *DataMatrix[float64], time float64) Vec3 {
+func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, noise_values *DataMatrix[float64], time float64) Vec3 {
 	ray := *starting_ray
 	cloud_color := Vec3Fill(0.5)
 	acc_color := Vec3Fill(0) // accumulated color
@@ -140,17 +144,26 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, pe
 		// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
 
 		// sample perlin
-		noise_scale := 70.0
 		if time > 1000000 {
 			time = 0.0
 		}
-		noise_phase := time * 10
-		noise_x := int(math.Abs(ray.origin.X*noise_scale + noise_phase*1))
-		noise_y := int(math.Abs(ray.origin.Y*noise_scale + noise_phase*1))
-		noise_z := int(math.Abs(ray.origin.Z*noise_scale + noise_phase*1))
-		noise1 := perlin_values.get(noise_x, noise_y)
-		noise2 := perlin_values.get(noise_y, noise_z)
-		noisef := (noise1 + noise2) * 0.5
+
+		// noise_scale := 50.0
+		// noise_phase := time * 10
+		// noise_x := int(math.Abs(ray.origin.X*noise_scale + noise_phase*1))
+		// noise_y := int(math.Abs(ray.origin.Y*noise_scale + noise_phase*0))
+		// noise_z := int(math.Abs(ray.origin.Z*noise_scale*2 + noise_phase*1))
+		// noise1 := noise_values.get(noise_x, noise_y)
+		// noise2 := noise_values.get(noise_x, noise_z)
+		// noisef := (noise1 + noise2) * 0.5
+
+		noise_scale := 3.0
+		noise_phase := time * 3
+		noisef := perlin_gen.Noise3D(
+			ray.origin.X*noise_scale+noise_phase*1,
+			ray.origin.Y*noise_scale+noise_phase*0,
+			ray.origin.Z*noise_scale+noise_phase*2,
+		)
 
 		// density := 0.025
 		density := noisef
