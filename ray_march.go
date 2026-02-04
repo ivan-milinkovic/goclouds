@@ -166,9 +166,11 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, pe
 		// with light
 		sub_sphere_normal := ray_origin_in_sphere_space.Sub(sphere.C).Normalized()
 		light_factor := sub_sphere_normal.Dot((*light).dir)
-		light_amount := absorbed * light_factor
+		light_amount := (1 - absorbed) * light_factor
+		// light_amount := (absorbed) * light_factor
 		point_light_color := light.color.Scale(light_amount)
-		point_cloud_col := cloud_color.Scale(1.0 * (1 - absorbed))
+		// point_cloud_col := cloud_color.Scale(1.0 * (1 - absorbed))
+		point_cloud_col := cloud_color
 		point_col := point_cloud_col.Mul(point_light_color)
 		acc_color = acc_color.Add(point_col)
 
