@@ -29,6 +29,14 @@ func (v Vec3) Scale(s float64) Vec3 {
 	}
 }
 
+func (v Vec3) AddScalar(s float64) Vec3 {
+	return Vec3{
+		X: v.X + s,
+		Y: v.Y + s,
+		Z: v.Z + s,
+	}
+}
+
 func (v Vec3) Add(v2 Vec3) Vec3 {
 	return Vec3{
 		X: v.X + v2.X,

@@ -29,7 +29,7 @@ func main() {
 		H:      screen_h,
 	}
 	for i := range pixel_count {
-		image_target.Pixels[i] = Pixel{R: 100, G: 100, B: 100, A: 255}
+		image_target.Pixels[i] = Pixel{R: 20, G: 20, B: 20, A: 255}
 	}
 
 	img_bytes := make([]byte, pixel_count*4) // used to copy to texture

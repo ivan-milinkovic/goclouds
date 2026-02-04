@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"runtime"
 	"sync"
 )
@@ -14,6 +15,14 @@ func ray_march(img *ImageTarget, camera *Camera) {
 	light := DirectionalLight{
 		dir: Vec3Make(-1.5, 1.5, 0.75).Normalized(),
 	}
+
+	// Test ray at the center
+	// ray := Ray{
+	// 	origin: Vec3Fill(0),
+	// 	dir:    Vec3Make(0, 0, -1),
+	// }
+	// march(&ray, &sphere, &light)
+	// return
 
 	// Single-threaded
 	// for y := range img.H {
@@ -42,7 +51,8 @@ func ray_march(img *ImageTarget, camera *Camera) {
 			for y := y_mark; y < end; y++ {
 				for x := range img.W {
 					ray := camera.MakeRay(x, y, img.W, img.H)
-					colorf := march(&ray, &sphere, &light)
+					// colorf := march_solid(&ray, &sphere, &light)
+					colorf := march_volume(&ray, &sphere, &light)
 
 					// GetTime is extremelly slow duw to system calls
 					// mod := Vec3Fill(math.Sin(rl.GetTime() * 4)).Add(Vec3Fill(1))
@@ -68,7 +78,7 @@ type DirectionalLight struct {
 	color Vec3
 }
 
-func march(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec3 {
+func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec3 {
 	ray := *starting_ray
 	background := Vec3Fill(0)
 	count := 0
@@ -95,4 +105,53 @@ func march(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec3 {
 		}
 		count++
 	}
+}
+
+func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec3 {
+	ray := *starting_ray
+	acc_color := Vec3Fill(0) // accumulated color
+	acc_density := 0.0
+	max_jumps := 40
+	jump_count := 0
+	prev_sdf := math.MaxFloat64
+	for jump_count < max_jumps {
+		jump_count++
+
+		ray_origin_in_sphere_space := ray.origin.Sub(sphere.C)
+		sdf := sdfSphere(ray_origin_in_sphere_space, sphere.R)
+
+		if sdf > prev_sdf { // break out early if moving away from all objects
+			break
+		}
+		prev_sdf = sdf
+
+		if sdf > 0 {
+			// advance ray outside of volumes
+			dv := ray.dir.Scale(sdf) // don't attempt to advance by zero
+			ray.origin = ray.origin.Add(dv)
+			continue
+		}
+
+		// inside volume
+
+		// when orientations are introduced, the normals will have to be transformed
+		// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
+
+		density := 0.025
+		acc_density += density
+
+		// no light
+		acc_color = acc_color.AddScalar(density)
+
+		// with light
+		// sub_sphere_normal := ray_origin_in_sphere_space.Sub(sphere.C).Normalized()
+		// light_amount := sub_sphere_normal.Dot((*light).dir)
+		// light_scale := acc_density // math.Abs(sdf)
+		// acc_color = acc_color.AddScalar(light_scale * light_amount)
+
+		// advance ray inside volume
+		dv := ray.dir.Scale(0.025)
+		ray.origin = ray.origin.Add(dv)
+	}
+	return acc_color
 }
