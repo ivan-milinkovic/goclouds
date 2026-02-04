@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-func update(img *ImageTarget, camera *Camera) {
+func ray_march(img *ImageTarget, camera *Camera) {
 	sphere := Sphere{
 		C: Vec3{0, 0, -2},
 		R: 1,

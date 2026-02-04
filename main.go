@@ -47,9 +47,8 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 
-		update(&image_target, &camera)
+		ray_march(&image_target, &camera)
 
-		// Draw
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Black)
 		rl.UpdateTexture(tex, image_target.Pixels)

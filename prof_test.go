@@ -33,7 +33,7 @@ func BenchmarkProf(b *testing.B) {
 
 	pprof.StartCPUProfile(f)
 	for b.Loop() {
-		update(&image_target, &camera)
+		ray_march(&image_target, &camera)
 	}
 	pprof.StopCPUProfile()
 }
