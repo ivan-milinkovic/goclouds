@@ -46,18 +46,18 @@ func main() {
 	}
 
 	// prepare perlin
-	perlin_img := rl.LoadImage("perlin.png")
-	perlin_pixels := rl.LoadImageColors(perlin_img)
-	perlin_values := NewDataMatrix[float64](int(perlin_img.Width), int(perlin_img.Height))
-	for i := range perlin_img.Width * perlin_img.Height {
-		perlin_values.values[i] = float64(perlin_pixels[i].R) / 255.0
+	noise_img := rl.LoadImage("cells.png")
+	noise_pixels := rl.LoadImageColors(noise_img)
+	noise_values := NewDataMatrix[float64](int(noise_img.Width), int(noise_img.Height))
+	for i := range noise_img.Width * noise_img.Height {
+		noise_values.values[i] = float64(noise_pixels[i].R) / 255.0
 	}
 
 	// rl.SetTargetFPS(60)
 	for !rl.WindowShouldClose() {
 
 		t := rl.GetTime()
-		ray_march(&image_target, &camera, perlin_values, t)
+		ray_march(&image_target, &camera, noise_values, t)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Black)

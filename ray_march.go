@@ -12,7 +12,7 @@ var perlin_gen = perlin.NewPerlin(2.0, 2.0, 1, 1234)
 
 func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float64], time float64) {
 	sphere := Sphere{
-		C: Vec3{0, 0, -2},
+		C: Vec3{0, 0, -1},
 		R: 1,
 	}
 
@@ -148,22 +148,33 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 			time = 0.0
 		}
 
-		// noise_scale := 50.0
-		// noise_phase := time * 10
-		// noise_x := int(math.Abs(ray.origin.X*noise_scale + noise_phase*1))
-		// noise_y := int(math.Abs(ray.origin.Y*noise_scale + noise_phase*0))
-		// noise_z := int(math.Abs(ray.origin.Z*noise_scale*2 + noise_phase*1))
-		// noise1 := noise_values.get(noise_x, noise_y)
-		// noise2 := noise_values.get(noise_x, noise_z)
-		// noisef := (noise1 + noise2) * 0.5
+		noise_scale := 50.0
+		noise_phase := time * 10
+		noise_x := int(math.Abs(ray.origin.X*noise_scale + noise_phase*1))
+		noise_y := int(math.Abs(ray.origin.Y*noise_scale + noise_phase*0))
+		noise_z := int(math.Abs(ray.origin.Z*noise_scale*2 + noise_phase*1))
+		noise1 := noise_values.get(noise_x, noise_y)
+		noise2 := noise_values.get(noise_x, noise_z)
+		noisef_0 := (noise1 + noise2) * 0.5
 
-		noise_scale := 3.0
-		noise_phase := time * 3
-		noisef := perlin_gen.Noise3D(
-			ray.origin.X*noise_scale+noise_phase*1,
-			ray.origin.Y*noise_scale+noise_phase*0,
-			ray.origin.Z*noise_scale+noise_phase*2,
+		// noise_scale_1 := 1.0
+		// noise_phase_1 := time * 2
+		// noisef_1 := perlin_gen.Noise3D(
+		// 	ray.origin.X*noise_scale_1+noise_phase_1*1,
+		// 	ray.origin.Y*noise_scale_1+noise_phase_1*0,
+		// 	ray.origin.Z*noise_scale_1+noise_phase_1*2,
+		// )
+
+		noise_scale_2 := 6.0
+		noise_phase_2 := time * 3
+		noisef_2 := perlin_gen.Noise3D(
+			ray.origin.X*noise_scale_2+noise_phase_2*1,
+			ray.origin.Y*noise_scale_2+noise_phase_2*0,
+			ray.origin.Z*noise_scale_2+noise_phase_2*1,
 		)
+
+		balance := 0.75
+		noisef := noisef_0*balance + noisef_2*(1-balance) //+ noisef_1 + 0.1
 
 		// density := 0.025
 		density := noisef
@@ -188,7 +199,7 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 		acc_color = acc_color.Add(point_col)
 
 		// advance ray inside volume
-		ds := sphere.R / 8.0
+		ds := sphere.R / 16.0
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
 		volume_acc_dist += ds
