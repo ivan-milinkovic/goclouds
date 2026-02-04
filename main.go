@@ -43,6 +43,13 @@ func main() {
 		aspect: float64(screen_w) / float64(screen_h),
 	}
 
+	perlin_img := rl.LoadImage("perlin.png")
+	perlin_pixels := rl.LoadImageColors(perlin_img)
+	perlin_values := make([]float64, pixel_count)
+	for i := range perlin_img.Width * perlin_img.Height {
+		perlin_values[i] = float64(perlin_pixels[i].R) / 255.0
+	}
+
 	// rl.SetTargetFPS(60)
 
 	for !rl.WindowShouldClose() {
