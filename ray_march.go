@@ -139,7 +139,7 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, pe
 
 		// sample perlin
 		// perlin_scale := 50.0 * math.Sin(time)
-		perlin_scale := 50.0
+		perlin_scale := 70.0
 		if time > 1000000 {
 			time = 0.0
 		}
@@ -150,6 +150,7 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, pe
 		perlin1 := perlin_values.get(perlin_x, perlin_y)
 		perlin2 := perlin_values.get(perlin_y, perlin_z)
 		perlin := (perlin1 + perlin2) * 0.5
+		// perlin := perlin1 * perlin2
 		// perlin3 := perlin_values.get(perlin_x, perlin_z)
 		// perlin := (perlin1 + perlin2 + perlin3) * 0.33
 
