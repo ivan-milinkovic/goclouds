@@ -13,7 +13,8 @@ func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float
 	}
 
 	light := DirectionalLight{
-		dir: Vec3Make(-1.5, 1.5, 0.75).Normalized(),
+		dir:   Vec3Make(-1.5, 1.5, 0.75).Normalized(),
+		color: Vec3Fill(1.0),
 	}
 
 	// Test ray at the center
@@ -109,6 +110,7 @@ func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec
 
 func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, perlin_values *DataMatrix[float64], time float64) Vec3 {
 	ray := *starting_ray
+	cloud_color := Vec3Fill(0.5)
 	acc_color := Vec3Fill(0) // accumulated color
 	acc_density := 0.0
 	volume_acc_dist := 0.0 // accumulated distance inside a volume
@@ -138,34 +140,37 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, pe
 		// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
 
 		// sample perlin
-		perlin_scale := 70.0
+		noise_scale := 70.0
 		if time > 1000000 {
 			time = 0.0
 		}
-		perlin_phase := time * 10
-		perlin_x := int(math.Abs(ray.origin.X*perlin_scale + perlin_phase))
-		perlin_y := int(math.Abs(ray.origin.Y*perlin_scale + perlin_phase))
-		perlin_z := int(math.Abs(ray.origin.Z*perlin_scale + perlin_phase))
-		perlin1 := perlin_values.get(perlin_x, perlin_y)
-		perlin2 := perlin_values.get(perlin_y, perlin_z)
-		perlin := (perlin1 + perlin2) * 0.5
+		noise_phase := time * 10
+		noise_x := int(math.Abs(ray.origin.X*noise_scale + noise_phase*1))
+		noise_y := int(math.Abs(ray.origin.Y*noise_scale + noise_phase*1))
+		noise_z := int(math.Abs(ray.origin.Z*noise_scale + noise_phase*1))
+		noise1 := perlin_values.get(noise_x, noise_y)
+		noise2 := perlin_values.get(noise_y, noise_z)
+		noisef := (noise1 + noise2) * 0.5
 
 		// density := 0.025
-		density := perlin
+		density := noisef
 		acc_density += density
-
 		absorbed := math.Exp(-volume_acc_dist * density)
 
 		// shade
 
 		// no light
-		acc_color = acc_color.AddScalar(1 - absorbed)
+		// acc_color = acc_color.AddScalar(1 - absorbed)
+		// acc_color = acc_color.Add(cloud_color.Scale(0.5 * (1 - absorbed)))
 
 		// with light
-		// sub_sphere_normal := ray_origin_in_sphere_space.Sub(sphere.C).Normalized()
-		// light_factor := sub_sphere_normal.Dot((*light).dir)
-		// light_amount := absorbed * light_factor
-		// acc_color = acc_color.AddScalar(light_amount)
+		sub_sphere_normal := ray_origin_in_sphere_space.Sub(sphere.C).Normalized()
+		light_factor := sub_sphere_normal.Dot((*light).dir)
+		light_amount := absorbed * light_factor
+		point_light_color := light.color.Scale(light_amount)
+		point_cloud_col := cloud_color.Scale(1.0 * (1 - absorbed))
+		point_col := point_cloud_col.Mul(point_light_color)
+		acc_color = acc_color.Add(point_col)
 
 		// advance ray inside volume
 		ds := sphere.R / 8.0
