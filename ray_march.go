@@ -165,16 +165,17 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 		// 	ray.origin.Z*noise_scale_1+noise_phase_1*2,
 		// )
 
-		noise_scale_2 := 6.0
-		noise_phase_2 := time * 3
-		noisef_2 := perlin_gen.Noise3D(
-			ray.origin.X*noise_scale_2+noise_phase_2*1,
-			ray.origin.Y*noise_scale_2+noise_phase_2*0,
-			ray.origin.Z*noise_scale_2+noise_phase_2*1,
+		perlin_scale_2 := 6.0
+		perlin_phase_2 := time * 3
+		perlin_2 := perlin_gen.Noise3D(
+			ray.origin.X*perlin_scale_2+perlin_phase_2*1,
+			ray.origin.Y*perlin_scale_2+perlin_phase_2*0,
+			math.Abs(ray.origin.Z)*perlin_scale_2+perlin_phase_2*1, // see Noise3D implementation, falls back to 3D if z < 0
 		)
+		// perlin_2 = 1 - perlin_2
 
-		balance := 0.75
-		noisef := noisef_0*balance + noisef_2*(1-balance) //+ noisef_1 + 0.1
+		balance := 0.5
+		noisef := noisef_0*balance + perlin_2*(1-balance) //+ noisef_1 + 0.1
 
 		// density := 0.025
 		density := noisef
