@@ -50,6 +50,12 @@ func main() {
 	// prepare perlin
 	noises := NewNoises()
 
+	light := Light{
+		origin: Vec3Make(-2, 2, 0),
+		dir:    Vec3Make(1, -0.25, 0).Normalized(),
+		color:  Vec3Fill(1.0),
+	}
+
 	// clear_color := rl.Black
 	clear_color := color.RGBA{5, 10, 30, 255}
 	// clear_color := color.RGBA{40, 40, 40, 255}
@@ -57,8 +63,10 @@ func main() {
 	// rl.SetTargetFPS(60)
 	for !rl.WindowShouldClose() {
 
-		t := rl.GetTime()
-		ray_march(&image_target, &camera, noises, t)
+		time := rl.GetTime()
+		// light.origin.X = 2 * math.Sin(time*0.5)
+		// light.origin = VRotate(&light.origin, &Vec3{0, 1, 0}, 0.1)
+		ray_march(&image_target, &camera, &light, noises, time)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(clear_color)

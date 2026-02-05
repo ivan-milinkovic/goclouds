@@ -75,3 +75,7 @@ func asymptote_to_one_2(x float64, compress float64) float64 {
 	sig *= 2
 	return sig
 }
+
+func asymptote_to_one_3(x float64) float64 {
+	return math.Log(x + 1) // desmos code: y=\log\left(x+1\right)
+}

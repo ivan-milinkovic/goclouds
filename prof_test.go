@@ -33,9 +33,15 @@ func BenchmarkProf(b *testing.B) {
 
 	noises := Noises{cell_values: NewDataMatrix[float64](10, 10)}
 
+	light := Light{
+		origin: Vec3Make(-1, 1, 0),
+		dir:    Vec3Make(1, -0.25, 0).Normalized(),
+		color:  Vec3Fill(1.0),
+	}
+
 	pprof.StartCPUProfile(f)
 	for b.Loop() {
-		ray_march(&image_target, &camera, &noises, 1)
+		ray_march(&image_target, &camera, &light, &noises, 1)
 	}
 	pprof.StopCPUProfile()
 }

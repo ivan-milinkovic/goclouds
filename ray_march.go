@@ -35,16 +35,10 @@ type Light struct { // point light
 	color  Vec3
 }
 
-func ray_march(img *ImageTarget, camera *Camera, noises *Noises, time float64) {
+func ray_march(img *ImageTarget, camera *Camera, light *Light, noises *Noises, time float64) {
 	sphere := Sphere{
 		C: Vec3{0, 0, -1},
 		R: 1,
-	}
-
-	light := Light{
-		origin: Vec3Make(-1, 1, 0),
-		dir:    Vec3Make(1, -0.25, 0).Normalized(),
-		color:  Vec3Fill(1.0),
 	}
 
 	// Test ray at the center
@@ -77,7 +71,7 @@ func ray_march(img *ImageTarget, camera *Camera, noises *Noises, time float64) {
 				for x := range img.W {
 					ray := camera.MakeRay(x, y, img.W, img.H)
 					// colorf := march_solid(&ray, &sphere, &light)
-					colorf := march_volume(&ray, &sphere, &light, noises, time)
+					colorf := march_volume(&ray, &sphere, light, noises, time)
 
 					p := pixel_from_float4(colorf)
 					img.Pixels[y*img.W+x] = p
@@ -221,9 +215,8 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises
 		acc_distance += ds
 	}
 	diffuse := cloud_color.Scale(acc_light_amount)
-	// density_compressed := math.Log(0.2*acc_density + 1) // desmos code: y=\log\left(x+1\right)
-	density_compressed := 0.9 * acc_density
-	alpha := clamp01(density_compressed)
+	// alpha := asymptote_to_one_3(acc_density)
+	alpha := clamp01(0.8 * acc_density) // looks better
 	return [4]float64{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 
