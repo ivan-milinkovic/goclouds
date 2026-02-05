@@ -301,7 +301,7 @@ func sample_density(point Vec3, noises *Noises, perlin *perlin.Perlin, time floa
 	// perlinf := perlin_2
 	perlinf := (perlin_1 + perlin_2) // * 0.5
 
-	balance := 0.5
+	balance := 1.0                                   // cell texture is not good yet
 	noisef := noisef_0*(1-balance) + perlinf*balance //+ noisef_1 + 0.1
 
 	return noisef
