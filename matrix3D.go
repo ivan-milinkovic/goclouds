@@ -36,10 +36,10 @@ func (dm *Matrix3D[T]) get(x, y, z int) T {
 }
 
 func (dm *Matrix3D[T]) getf(x, y, z float64) T {
-
-	x0 := math.Abs(x)
-	y0 := math.Abs(y)
-	z0 := math.Abs(z)
+	// get parts after decimal point
+	x0 := math.Abs(math.Mod(x, 1))
+	y0 := math.Abs(math.Mod(y, 1))
+	z0 := math.Abs(math.Mod(z, 1))
 
 	x1 := int(x0 * float64(dm.W))
 	y1 := int(y0 * float64(dm.H))
