@@ -189,7 +189,6 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 		density := sample_density(ray.origin, noises, time)
 		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
-		pass_through_amount := math.Exp(-acc_distance * acc_density) // Beer's law
 
 		// shade
 		switch shading_type {
@@ -201,19 +200,18 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 			to_light_dir := (*light).dir.Scale(-1) // for directional light
 			light_factor := sub_sphere_normal.Dot(to_light_dir)
 			light_factor = max(0.2, light_factor)
-			light_amount := pass_through_amount * light_factor
+			light_pass_through_amount := math.Exp(-acc_distance * acc_density) // Beer's law
+			light_amount := light_pass_through_amount * light_factor
 			point_light_color := light.color.Scale(light_amount)
 			point_col := cloud_color.Mul(point_light_color)
-			pass_through_color := point_col.Scale(pass_through_amount)
-			acc_color = acc_color.Add(pass_through_color)
+			acc_color = acc_color.Add(point_col)
 
 		case ShadingType_RayMarchedLight:
 			distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
 			pass_through_light := math.Exp(-distance_sampled_to_light * density_to_light) // Beer's law
 			light_color_at_point := light.color.Scale(pass_through_light)
 			point_color := cloud_color.Mul(light_color_at_point)
-			pass_through_color := point_color.Scale(pass_through_amount)
-			acc_color = acc_color.Add(pass_through_color)
+			acc_color = acc_color.Add(point_color)
 		}
 
 		// advance ray inside volume
@@ -222,8 +220,8 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
 	}
-	density_compressed := math.Log(acc_density + 1) // desmos code: y=\log\left(x+1\right)
-	// density_compressed := acc_density
+	density_compressed := math.Log(0.2*acc_density + 1) // desmos code: y=\log\left(x+1\right)
+	// density_compressed := 0.02 * acc_density
 	alpha := clamp01(density_compressed)
 	return [4]float64{acc_color.X, acc_color.Y, acc_color.Z, alpha}
 }
@@ -257,7 +255,7 @@ func march_through_volume_to_light(
 }
 
 func sample_density(point Vec3, noises *Noises, time float64) float64 {
-	// return 0.0125
+	// return 0.05
 
 	noise_scale := 50.0
 	noise_phase := time * 4
