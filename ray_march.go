@@ -9,6 +9,7 @@ import (
 )
 
 var perlin_gen = perlin.NewPerlin(1.0, 1.5, 2, 1234) // contrast, zoom, iterations (details), seed
+
 var max_jumps = 40
 var cloud_color = Vec3Fill(0.5)
 var volume_resolution = 0.2
@@ -280,7 +281,8 @@ func sample_density(point Vec3, noises *Noises, perlin *perlin.Perlin, time floa
 
 	perlin_scale_1 := 2.0
 	perlin_phase_1 := time * 1
-	perlin_1 := perlin_gen.Noise3D(
+	perlin_1 := noises.perlin_gen.Noise3D(
+		// perlin_1 := noises.perlin_values.getf(
 		point.X*perlin_scale_1+perlin_phase_1*1,
 		point.Y*perlin_scale_1+perlin_phase_1*0,
 		point.Z*perlin_scale_1+perlin_phase_1*2,
@@ -288,7 +290,8 @@ func sample_density(point Vec3, noises *Noises, perlin *perlin.Perlin, time floa
 
 	perlin_scale_2 := 8.0
 	perlin_phase_2 := time * 1
-	perlin_2 := perlin_gen.Noise3D(
+	perlin_2 := noises.perlin_gen.Noise3D(
+		// perlin_2 := noises.perlin_values.getf(
 		point.X*perlin_scale_2+perlin_phase_2*1,
 		point.Y*perlin_scale_2+perlin_phase_2*0,
 		math.Abs(point.Z)*perlin_scale_2+perlin_phase_2*1, // see Noise3D implementation, falls back to 3D if z < 0
