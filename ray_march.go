@@ -29,12 +29,7 @@ type Sphere struct {
 	R float64
 }
 
-type DirectionalLight struct {
-	dir   Vec3
-	color Vec3
-}
-
-type PointLight struct {
+type Light struct { // point light
 	origin Vec3
 	dir    Vec3
 	color  Vec3
@@ -46,15 +41,11 @@ func ray_march(img *ImageTarget, camera *Camera, noises *Noises, time float64) {
 		R: 1,
 	}
 
-	light := DirectionalLight{
-		dir:   Vec3Make(1, -0.25, 0).Normalized(),
-		color: Vec3Fill(1.0),
+	light := Light{
+		origin: Vec3Make(-1, 1, 0),
+		dir:    Vec3Make(1, -0.25, 0).Normalized(),
+		color:  Vec3Fill(1.0),
 	}
-
-	// light := PointLight{
-	// 	dir:   Vec3Make(-1.5, 1.5, 0.75).Normalized(),
-	// 	color: Vec3Fill(1.0),
-	// }
 
 	// Test ray at the center
 	// ray := Ray{
@@ -99,9 +90,9 @@ func ray_march(img *ImageTarget, camera *Camera, noises *Noises, time float64) {
 	wg.Wait()
 }
 
-func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec3 {
+func march_solid(starting_ray *Ray, sphere *Sphere, light *Light) [4]float64 {
 	ray := *starting_ray
-	background := Vec3Fill(0)
+	background := [4]float64{0, 0, 0, 0}
 	count := 0
 	for {
 		ray_origin_in_sphere_space := ray.origin.Sub(sphere.C)
@@ -113,8 +104,9 @@ func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec
 			// when orientations are introduced, the normals will have to be transformed
 			// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
 			sphere_normal := ray_origin_in_sphere_space.Sub(sphere.C).Normalized()
-			light_amount := sphere_normal.Dot((*light).dir)
-			return Vec3Fill(light_amount)
+			dir_to_light := light.origin.Sub(ray.origin).Normalized()
+			light_amount := sphere_normal.Dot(dir_to_light)
+			return [4]float64{light_amount, light_amount, light_amount, 1.0}
 		}
 
 		// advance ray
@@ -128,7 +120,7 @@ func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec
 	}
 }
 
-func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, noises *Noises, time float64) [4]float64 {
+func march_volume(starting_ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) [4]float64 {
 	ray := *starting_ray
 
 	jump_count := 0
@@ -171,7 +163,7 @@ func march_outside_volume(ray *Ray, sphere *Sphere, jump_count *int) bool {
 	return false
 }
 
-func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noises *Noises, time float64) [4]float64 {
+func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) [4]float64 {
 	acc_density := 0.0
 	acc_distance := 0.0      // accumulated distance inside the volume
 	acc_color := Vec3Fill(0) // accumulated color
@@ -238,12 +230,12 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 func march_through_volume_to_light(
 	point Vec3,
 	sphere *Sphere,
-	light *DirectionalLight,
+	light *Light,
 	noises *Noises,
 	time float64,
 ) (distance, density float64) {
 	// directional light does not have an origin, just point towards where it's coming from (the oposite direction)
-	dir_to_light := light.dir.Scale(-1)
+	dir_to_light := light.origin.Sub(point).Normalized()
 	acc_distance := 0.0
 	acc_density := 0.0
 	for {
@@ -264,7 +256,7 @@ func march_through_volume_to_light(
 }
 
 func sample_density(point Vec3, noises *Noises, time float64) float64 {
-	// return 0.05
+	// return 0.15
 
 	noise_scale := 50.0
 	noise_phase := time * 4
