@@ -53,6 +53,10 @@ func main() {
 		noise_values.values[i] = float64(noise_pixels[i].R) / 255.0
 	}
 
+	// clear_color := rl.Black
+	// clear_color := color.RGBA{30, 50, 70, 255}
+	clear_color := color.RGBA{40, 40, 40, 255}
+
 	// rl.SetTargetFPS(60)
 	for !rl.WindowShouldClose() {
 
@@ -60,7 +64,7 @@ func main() {
 		ray_march(&image_target, &camera, noise_values, t)
 
 		rl.BeginDrawing()
-		rl.ClearBackground(rl.Black)
+		rl.ClearBackground(clear_color)
 		rl.UpdateTexture(tex, image_target.Pixels)
 		rl.DrawTexture(tex, 0, 0, rl.White)
 		rl.DrawText(fmt.Sprintf("%v fps, dt: %.0fms", rl.GetFPS(), rl.GetFrameTime()*1000), 10, 10, 16, rl.White)

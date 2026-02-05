@@ -197,6 +197,7 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 		}
 
 		density := sample_density(ray.origin, noise_values, perlin_gen, time)
+		// density *= asymptote_to_one(math.Abs(sdf)) // make density closer to the surface softer
 		acc_density += density
 		pass_through_amount := math.Exp(-acc_distance * acc_density) // Beer's law
 
@@ -213,7 +214,8 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 			light_amount := pass_through_amount * light_factor
 			point_light_color := light.color.Scale(light_amount)
 			point_col := cloud_color.Mul(point_light_color)
-			acc_color = acc_color.Add(point_col)
+			pass_through_color := point_col.Scale(pass_through_amount)
+			acc_color = acc_color.Add(pass_through_color)
 
 		case ShadingType_RayMarchedLight:
 			distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noise_values, time)
