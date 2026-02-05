@@ -49,12 +49,13 @@ func ray_march(img *ImageTarget, camera *Camera, light *Light, noises *Noises, t
 	// march_volume(&ray, &sphere, &light, noises, time)
 	// return
 
-	// Test ray to the left of the sphere
+	// Test ray to a tangent of the sphere
+	// theta := math.Pi*0.5 - math.Asin(sphere.R/sphere.C.Sub(camera.origin).Len())
 	// ray := Ray{
 	// 	origin: Vec3Fill(0),
-	// 	dir:    Vec3Make(0, math.Atan(0.5), -1).Normalized(),
+	// 	dir:    Vec3Make(0, math.Cos(theta), math.Sin(theta)).Normalized(),
 	// }
-	// march_volume(&ray, &sphere, &light, noises, time)
+	// march_volume(&ray, &sphere, light, noises, time)
 	// return
 
 	// Multi-goroutine
@@ -162,6 +163,7 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises
 	acc_distance := 0.0      // accumulated distance inside the volume
 	acc_color := Vec3Fill(0) // accumulated color
 	acc_light_amount := 0.0
+	count := 0.0
 
 	// when orientations are introduced, the normals will have to be transformed
 	// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
@@ -187,7 +189,7 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises
 			to_light_dir := (*light).dir.Scale(-1) // for directional light
 			light_factor := sub_sphere_normal.Dot(to_light_dir)
 			light_factor = max(0.2, light_factor)
-			light_pass_through_amount := math.Exp(-acc_distance * acc_density) // Beer's law
+			light_pass_through_amount := beers_law(acc_distance, acc_density)
 			light_amount := light_pass_through_amount * light_factor
 			point_light_color := light.color.Scale(light_amount)
 			point_col := cloud_color.Mul(point_light_color)
@@ -195,17 +197,15 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises
 
 		// case ShadingType_RayMarchedLight:
 		// 	distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
-		// 	light_amount := math.Exp(-distance_sampled_to_light * density_to_light) // Beer's law
+		// 	light_amount := beers_law(distance_sampled_to_light, density_to_light)
 		// 	light_color_at_point := light.color.Scale(light_amount)
 		// 	point_color := cloud_color.Mul(light_color_at_point)
 		// 	acc_color = acc_color.Add(point_color)
 
 		case ShadingType_RayMarchedLight:
 			distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
-			light_amount := math.Exp(-distance_sampled_to_light * density_to_light) // Beer's law
+			light_amount := beers_law(distance_sampled_to_light, density_to_light)
 			acc_light_amount += light_amount
-			acc_light_amount = asymptote_to_one_1(acc_light_amount)
-
 		}
 
 		// advance ray inside volume
@@ -213,11 +213,15 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
+
+		count += 1.0
 	}
 	// diffuse := acc_color
-	diffuse := cloud_color.Scale(acc_light_amount)
+	avg_light := acc_light_amount / count
+	diffuse := cloud_color.Scale(avg_light)
 	// alpha := asymptote_to_one_3(acc_density)
 	alpha := clamp01(0.8 * acc_density) // looks better
+	// alpha := 1 - beers_law(acc_distance, acc_density)
 	return [4]float64{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 
@@ -251,7 +255,7 @@ func march_through_volume_to_light(
 }
 
 func sample_density(point Vec3, noises *Noises, time float64) float64 {
-	// return 0.15
+	// return 0.05
 
 	noise_scale := 50.0
 	noise_phase := time * 4

@@ -77,5 +77,11 @@ func asymptote_to_one_2(x float64, compress float64) float64 {
 }
 
 func asymptote_to_one_3(x float64) float64 {
-	return math.Log(x + 1) // desmos code: y=\log\left(x+1\right)
+	// desmos code: y=\log\left(x+1\right)
+	return math.Log(x + 1)
+}
+
+func beers_law(distance, absorption float64) float64 {
+	// desmos code: y=\exp\left(-x\cdot d\right)
+	return math.Exp(-distance * absorption)
 }
