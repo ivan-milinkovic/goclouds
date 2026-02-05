@@ -38,10 +38,17 @@ func pixel_from_float4(fcol [4]float64) Pixel {
 }
 
 func byte_color_value_from_float(f float64) byte {
-	vf := min(f*255, 255)
-	vf = max(vf, 0)
-	vb := byte(vf)
+	f_clamped := clamp01(f)
+	vb := byte(f_clamped * 255)
 	return vb
+}
+
+func clamp(val, minv, maxv float64) float64 {
+	return max(min(val, maxv), minv)
+}
+
+func clamp01(val float64) float64 {
+	return clamp(val, 0, 1)
 }
 
 func f4add(v1 [4]float64, v2 [4]float64) [4]float64 {
