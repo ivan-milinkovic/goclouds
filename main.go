@@ -51,7 +51,7 @@ func main() {
 	noises := NewNoises()
 
 	// clear_color := rl.Black
-	clear_color := color.RGBA{30, 50, 70, 255}
+	clear_color := color.RGBA{5, 10, 30, 255}
 	// clear_color := color.RGBA{40, 40, 40, 255}
 
 	// rl.SetTargetFPS(60)
