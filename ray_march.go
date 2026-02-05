@@ -8,10 +8,10 @@ import (
 	"github.com/aquilax/go-perlin"
 )
 
-var perlin_gen = perlin.NewPerlin(1.0, 1.0, 2, 1234) // contrast, zoom, iterations (details), seed
+var perlin_gen = perlin.NewPerlin(1.0, 1.5, 2, 1234) // contrast, zoom, iterations (details), seed
 var max_jumps = 40
 var cloud_color = Vec3Fill(0.5)
-var volume_resolution = 0.05
+var volume_resolution = 0.2
 
 type ShadingType = int
 
@@ -21,7 +21,7 @@ const (
 	ShadingType_RayMarchedLight ShadingType = 2
 )
 
-const shading_type = ShadingType_NaiveLight
+const shading_type = ShadingType_RayMarchedLight
 
 type Sphere struct {
 	C Vec3
@@ -197,7 +197,7 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 		}
 
 		density := sample_density(ray.origin, noise_values, perlin_gen, time)
-		// density *= asymptote_to_one(math.Abs(sdf)) // make density closer to the surface softer
+		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
 		pass_through_amount := math.Exp(-acc_distance * acc_density) // Beer's law
 
@@ -232,7 +232,8 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
 	}
-	alpha := min(1.0, max(math.Log(acc_density), 0.0))
+	smooth_density := math.Log(acc_density + 1) // desmos code: y=\log\left(x+1\right)
+	alpha := min(1.0, max(smooth_density, 0.0))
 	return [4]float64{acc_color.X, acc_color.Y, acc_color.Z, alpha}
 }
 
@@ -266,23 +267,24 @@ func march_through_volume_to_light(
 
 func sample_density(point Vec3, noise_values *DataMatrix[float64], perlin *perlin.Perlin, time float64) float64 {
 	// return 0.05
-	// noise_scale := 25.0
-	// noise_phase := time * 10
-	// noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
-	// noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*0))
-	// // noise_z := int(math.Abs(point.Z*noise_scale*2 + noise_phase*1))
-	// noise1 := noise_values.get(noise_x, noise_y)
-	// // noise2 := noise_values.get(noise_x, noise_z)
-	// // noisef_0 := (noise1 + noise2) * 0.5
-	// noisef_0 := noise1
 
-	// perlin_scale_1 := 2.0
-	// perlin_phase_1 := time * 1
-	// perlin_1 := perlin_gen.Noise3D(
-	// 	point.X*perlin_scale_1+perlin_phase_1*1,
-	// 	point.Y*perlin_scale_1+perlin_phase_1*0,
-	// 	point.Z*perlin_scale_1+perlin_phase_1*2,
-	// )
+	noise_scale := 30.0
+	noise_phase := time * 4
+	noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
+	noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*0))
+	// noise_z := int(math.Abs(point.Z*noise_scale*2 + noise_phase*1))
+	noise1 := noise_values.get(noise_x, noise_y)
+	// noise2 := noise_values.get(noise_y, noise_z)
+	// noisef_0 := (noise1 + noise2) * 0.5
+	noisef_0 := noise1
+
+	perlin_scale_1 := 2.0
+	perlin_phase_1 := time * 1
+	perlin_1 := perlin_gen.Noise3D(
+		point.X*perlin_scale_1+perlin_phase_1*1,
+		point.Y*perlin_scale_1+perlin_phase_1*0,
+		point.Z*perlin_scale_1+perlin_phase_1*2,
+	)
 
 	perlin_scale_2 := 8.0
 	perlin_phase_2 := time * 1
@@ -293,11 +295,11 @@ func sample_density(point Vec3, noise_values *DataMatrix[float64], perlin *perli
 	)
 	// perlin_2 = 1 - perlin_2
 
-	perlinf := perlin_2
-	// perlinf := (perlin_1 + perlin_2) * 0.5
+	// perlinf := perlin_2
+	perlinf := (perlin_1 + perlin_2) // * 0.5
 
-	// balance := 1.0
-	// noisef := noisef_0*(1-balance) + perlinf*balance //+ noisef_1 + 0.1
-	noisef := perlinf
+	balance := 0.5
+	noisef := noisef_0*(1-balance) + perlinf*balance //+ noisef_1 + 0.1
+
 	return noisef
 }

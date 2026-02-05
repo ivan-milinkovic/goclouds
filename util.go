@@ -53,13 +53,13 @@ func f4add(v1 [4]float64, v2 [4]float64) [4]float64 {
 	}
 }
 
-func asymptote_to_one(x float64) float64 {
+func asymptote_to_one(x float64, compress float64) float64 {
 	// return x / (x + 1)
 
 	// desmos code
 	// y=\left(\frac{1}{\left(1+e^{\left(-\left|x\cdot10\right|\right)}\right)}-0.5\right)\cdot2
 	x = math.Abs(x)
-	x *= 10
+	x *= compress
 	sig := 1 / (1 + math.Exp(x)) // sigmoid
 	sig -= 0.5
 	sig *= 2
