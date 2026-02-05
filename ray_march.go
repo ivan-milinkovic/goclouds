@@ -11,7 +11,7 @@ import (
 var perlin_gen = perlin.NewPerlin(1.0, 1.5, 2, 1234) // contrast, zoom, iterations (details), seed
 
 var max_jumps = 40
-var cloud_color = Vec3Fill(1.0)
+var cloud_color = Vec3Fill(0.95)
 var volume_resolution = 0.1
 
 type ShadingType = int
@@ -236,7 +236,8 @@ func march_through_volume_to_light(
 		point_in_sphere_space := point.Sub(sphere.C)
 		sdf := sdfSphere(point_in_sphere_space, sphere.R)
 		if sdf > 0 {
-			break // went outside the volume
+			acc_distance -= sdf // decrease by the over-shot distance outside the volume
+			break               // went outside the volume
 		}
 
 		acc_density += sample_density(point, noises, time)
