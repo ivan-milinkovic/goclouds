@@ -175,6 +175,7 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 	acc_density := 0.0
 	acc_distance := 0.0      // accumulated distance inside the volume
 	acc_color := Vec3Fill(0) // accumulated color
+	acc_light_amount := 0.0
 
 	// when orientations are introduced, the normals will have to be transformed
 	// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
@@ -206,12 +207,19 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 			point_col := cloud_color.Mul(point_light_color)
 			acc_color = acc_color.Add(point_col)
 
+		// case ShadingType_RayMarchedLight:
+		// 	distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
+		// 	light_amount := math.Exp(-distance_sampled_to_light * density_to_light) // Beer's law
+		// 	light_color_at_point := light.color.Scale(light_amount)
+		// 	point_color := cloud_color.Mul(light_color_at_point)
+		// 	acc_color = acc_color.Add(point_color)
+		// }
+
 		case ShadingType_RayMarchedLight:
 			distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
-			pass_through_light := math.Exp(-distance_sampled_to_light * density_to_light) // Beer's law
-			light_color_at_point := light.color.Scale(pass_through_light)
-			point_color := cloud_color.Mul(light_color_at_point)
-			acc_color = acc_color.Add(point_color)
+			light_amount := math.Exp(-distance_sampled_to_light * density_to_light) // Beer's law
+			acc_light_amount += light_amount
+			acc_light_amount = asymptote_to_one_1(acc_light_amount)
 		}
 
 		// advance ray inside volume
@@ -220,10 +228,11 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
 	}
-	density_compressed := math.Log(0.2*acc_density + 1) // desmos code: y=\log\left(x+1\right)
-	// density_compressed := 0.02 * acc_density
+	diffuse := cloud_color.Scale(acc_light_amount)
+	// density_compressed := math.Log(0.2*acc_density + 1) // desmos code: y=\log\left(x+1\right)
+	density_compressed := 0.9 * acc_density
 	alpha := clamp01(density_compressed)
-	return [4]float64{acc_color.X, acc_color.Y, acc_color.Z, alpha}
+	return [4]float64{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 
 func march_through_volume_to_light(

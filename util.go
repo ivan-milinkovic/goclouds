@@ -60,9 +60,12 @@ func f4add(v1 [4]float64, v2 [4]float64) [4]float64 {
 	}
 }
 
-func asymptote_to_one(x float64, compress float64) float64 {
-	// return x / (x + 1)
+func asymptote_to_one_1(x float64) float64 {
+	// desmos code: y\ =\ \frac{x}{\left(x+1\right)}
+	return x / (x + 1)
+}
 
+func asymptote_to_one_2(x float64, compress float64) float64 {
 	// desmos code
 	// y=\left(\frac{1}{\left(1+e^{\left(-\left|x\cdot10\right|\right)}\right)}-0.5\right)\cdot2
 	x = math.Abs(x)
