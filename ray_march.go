@@ -39,7 +39,7 @@ type PointLight struct {
 	color  Vec3
 }
 
-func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float64], time float64) {
+func ray_march(img *ImageTarget, camera *Camera, noises *Noises, time float64) {
 	sphere := Sphere{
 		C: Vec3{0, 0, -1},
 		R: 1,
@@ -91,7 +91,7 @@ func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float
 				for x := range img.W {
 					ray := camera.MakeRay(x, y, img.W, img.H)
 					// colorf := march_solid(&ray, &sphere, &light)
-					colorf := march_volume(&ray, &sphere, &light, perlin_values, time)
+					colorf := march_volume(&ray, &sphere, &light, noises, time)
 
 					p := pixel_from_float4(colorf)
 					img.Pixels[y*img.W+x] = p
@@ -133,7 +133,7 @@ func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec
 	}
 }
 
-func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, noise_values *DataMatrix[float64], time float64) [4]float64 {
+func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, noises *Noises, time float64) [4]float64 {
 	ray := *starting_ray
 
 	jump_count := 0
@@ -146,7 +146,7 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 			break
 		}
 
-		acc_color_v := march_through_volume(&ray, sphere, light, noise_values, time)
+		acc_color_v := march_through_volume(&ray, sphere, light, noises, time)
 		acc_color = f4add(acc_color, acc_color_v)
 	}
 	return acc_color
@@ -176,7 +176,7 @@ func march_outside_volume(ray *Ray, sphere *Sphere, jump_count *int) bool {
 	return false
 }
 
-func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noise_values *DataMatrix[float64], time float64) [4]float64 {
+func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noises *Noises, time float64) [4]float64 {
 	acc_density := 0.0
 	acc_distance := 0.0      // accumulated distance inside the volume
 	acc_color := Vec3Fill(0) // accumulated color
@@ -196,7 +196,7 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, noise_values, perlin_gen, time)
+		density := sample_density(ray.origin, noises, perlin_gen, time)
 		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
 		pass_through_amount := math.Exp(-acc_distance * acc_density) // Beer's law
@@ -218,7 +218,7 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 			acc_color = acc_color.Add(pass_through_color)
 
 		case ShadingType_RayMarchedLight:
-			distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noise_values, time)
+			distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
 			pass_through_light := math.Exp(-distance_sampled_to_light * density_to_light) // Beer's law
 			light_color_at_point := light.color.Scale(pass_through_light)
 			point_color := cloud_color.Mul(light_color_at_point)
@@ -232,8 +232,8 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
 	}
-	smooth_density := math.Log(acc_density + 1) // desmos code: y=\log\left(x+1\right)
-	alpha := min(1.0, max(smooth_density, 0.0))
+	density_compressed := math.Log(acc_density + 1) // desmos code: y=\log\left(x+1\right)
+	alpha := min(1.0, max(density_compressed, 0.0))
 	return [4]float64{acc_color.X, acc_color.Y, acc_color.Z, alpha}
 }
 
@@ -241,7 +241,7 @@ func march_through_volume_to_light(
 	point Vec3,
 	sphere *Sphere,
 	light *DirectionalLight,
-	noise_values *DataMatrix[float64],
+	noises *Noises,
 	time float64,
 ) (distance, density float64) {
 	// directional light does not have an origin, just point towards where it's coming from (the oposite direction)
@@ -255,7 +255,7 @@ func march_through_volume_to_light(
 			break // went outside the volume
 		}
 
-		acc_density += sample_density(point, noise_values, perlin_gen, time)
+		acc_density += sample_density(point, noises, perlin_gen, time)
 
 		// advance point towards light
 		dv := dir_to_light.Scale(volume_resolution)
@@ -265,7 +265,7 @@ func march_through_volume_to_light(
 	return acc_distance, acc_density
 }
 
-func sample_density(point Vec3, noise_values *DataMatrix[float64], perlin *perlin.Perlin, time float64) float64 {
+func sample_density(point Vec3, noises *Noises, perlin *perlin.Perlin, time float64) float64 {
 	// return 0.05
 
 	noise_scale := 30.0
@@ -273,7 +273,7 @@ func sample_density(point Vec3, noise_values *DataMatrix[float64], perlin *perli
 	noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
 	noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*0))
 	// noise_z := int(math.Abs(point.Z*noise_scale*2 + noise_phase*1))
-	noise1 := noise_values.get(noise_x, noise_y)
+	noise1 := noises.cell_values.get(noise_x, noise_y)
 	// noise2 := noise_values.get(noise_y, noise_z)
 	// noisef_0 := (noise1 + noise2) * 0.5
 	noisef_0 := noise1

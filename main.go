@@ -46,12 +46,7 @@ func main() {
 	}
 
 	// prepare perlin
-	noise_img := rl.LoadImage("cells.png")
-	noise_pixels := rl.LoadImageColors(noise_img)
-	noise_values := NewDataMatrix[float64](int(noise_img.Width), int(noise_img.Height))
-	for i := range noise_img.Width * noise_img.Height {
-		noise_values.values[i] = float64(noise_pixels[i].R) / 255.0
-	}
+	noises := NewNoises()
 
 	// clear_color := rl.Black
 	// clear_color := color.RGBA{30, 50, 70, 255}
@@ -61,7 +56,7 @@ func main() {
 	for !rl.WindowShouldClose() {
 
 		t := rl.GetTime()
-		ray_march(&image_target, &camera, noise_values, t)
+		ray_march(&image_target, &camera, noises, t)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(clear_color)
