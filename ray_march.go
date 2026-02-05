@@ -8,7 +8,7 @@ import (
 	"github.com/aquilax/go-perlin"
 )
 
-var perlin_gen = perlin.NewPerlin(2.0, 2.0, 1, 1234)
+var perlin_gen = perlin.NewPerlin(0.1, 1.0, 2, 1234) // contrast, zoom, iterations (details), seed
 
 func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float64], time float64) {
 	sphere := Sphere{
@@ -150,7 +150,8 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 		// density := 0.025
 		density := noisef
 		acc_density += density
-		absorbed := math.Exp(-volume_acc_dist * density)
+		absorbed := math.Exp(-volume_acc_dist * density) // Beer's law
+		absorbed *= 0.25
 
 		// shade
 
@@ -161,7 +162,6 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 		// with light
 		sub_sphere_normal := ray_origin_in_sphere_space.Sub(sphere.C).Normalized()
 		light_factor := sub_sphere_normal.Dot((*light).dir)
-		// light_amount := (1 - absorbed) * light_factor * 0.5
 		light_amount := (absorbed) * light_factor * 0.2
 		point_light_color := light.color.Scale(light_amount)
 		// point_cloud_col := cloud_color.Scale(1.0 * (1 - absorbed))
@@ -179,25 +179,26 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 }
 
 func sample_noise(point Vec3, noise_values *DataMatrix[float64], perlin *perlin.Perlin, time float64) float64 {
-	noise_scale := 50.0
-	noise_phase := time * 10
-	noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
-	noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*0))
-	noise_z := int(math.Abs(point.Z*noise_scale*2 + noise_phase*1))
-	noise1 := noise_values.get(noise_x, noise_y)
-	noise2 := noise_values.get(noise_x, noise_z)
-	noisef_0 := (noise1 + noise2) * 0.5
+	// noise_scale := 25.0
+	// noise_phase := time * 10
+	// noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
+	// noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*0))
+	// // noise_z := int(math.Abs(point.Z*noise_scale*2 + noise_phase*1))
+	// noise1 := noise_values.get(noise_x, noise_y)
+	// // noise2 := noise_values.get(noise_x, noise_z)
+	// // noisef_0 := (noise1 + noise2) * 0.5
+	// noisef_0 := noise1
 
-	// noise_scale_1 := 1.0
-	// noise_phase_1 := time * 2
-	// noisef_1 := perlin_gen.Noise3D(
-	// 	point.X*noise_scale_1+noise_phase_1*1,
-	// 	point.Y*noise_scale_1+noise_phase_1*0,
-	// 	point.Z*noise_scale_1+noise_phase_1*2,
+	// perlin_scale_1 := 2.0
+	// perlin_phase_1 := time * 1
+	// perlin_1 := perlin_gen.Noise3D(
+	// 	point.X*perlin_scale_1+perlin_phase_1*1,
+	// 	point.Y*perlin_scale_1+perlin_phase_1*0,
+	// 	point.Z*perlin_scale_1+perlin_phase_1*2,
 	// )
 
-	perlin_scale_2 := 6.0
-	perlin_phase_2 := time * 3
+	perlin_scale_2 := 8.0
+	perlin_phase_2 := time * 1
 	perlin_2 := perlin_gen.Noise3D(
 		point.X*perlin_scale_2+perlin_phase_2*1,
 		point.Y*perlin_scale_2+perlin_phase_2*0,
@@ -205,7 +206,11 @@ func sample_noise(point Vec3, noise_values *DataMatrix[float64], perlin *perlin.
 	)
 	// perlin_2 = 1 - perlin_2
 
-	balance := 0.5
-	noisef := noisef_0*balance + perlin_2*(1-balance) //+ noisef_1 + 0.1
+	perlinf := perlin_2
+	// perlinf := (perlin_1 + perlin_2) * 0.5
+
+	// balance := 1.0
+	// noisef := noisef_0*(1-balance) + perlinf*balance //+ noisef_1 + 0.1
+	noisef := perlinf
 	return noisef
 }
