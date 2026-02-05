@@ -199,13 +199,13 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises
 		// 	light_color_at_point := light.color.Scale(light_amount)
 		// 	point_color := cloud_color.Mul(light_color_at_point)
 		// 	acc_color = acc_color.Add(point_color)
-		// }
 
 		case ShadingType_RayMarchedLight:
 			distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
 			light_amount := math.Exp(-distance_sampled_to_light * density_to_light) // Beer's law
 			acc_light_amount += light_amount
 			acc_light_amount = asymptote_to_one_1(acc_light_amount)
+
 		}
 
 		// advance ray inside volume
@@ -214,6 +214,7 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
 	}
+	// diffuse := acc_color
 	diffuse := cloud_color.Scale(acc_light_amount)
 	// alpha := asymptote_to_one_3(acc_density)
 	alpha := clamp01(0.8 * acc_density) // looks better
