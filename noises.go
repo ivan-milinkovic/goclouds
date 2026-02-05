@@ -12,7 +12,7 @@ type Noises struct {
 }
 
 func NewNoises() *Noises {
-	noise_img := rl.LoadImage("cells.png")
+	noise_img := rl.LoadImage("cells2.png")
 	noise_pixels := rl.LoadImageColors(noise_img)
 	noise_values := NewDataMatrix[float64](int(noise_img.Width), int(noise_img.Height))
 	for i := range noise_img.Width * noise_img.Height {

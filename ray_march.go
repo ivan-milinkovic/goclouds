@@ -197,7 +197,7 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, noises, perlin_gen, time)
+		density := sample_density(ray.origin, noises, time)
 		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
 		pass_through_amount := math.Exp(-acc_distance * acc_density) // Beer's law
@@ -256,7 +256,7 @@ func march_through_volume_to_light(
 			break // went outside the volume
 		}
 
-		acc_density += sample_density(point, noises, perlin_gen, time)
+		acc_density += sample_density(point, noises, time)
 
 		// advance point towards light
 		dv := dir_to_light.Scale(volume_resolution)
@@ -266,10 +266,10 @@ func march_through_volume_to_light(
 	return acc_distance, acc_density
 }
 
-func sample_density(point Vec3, noises *Noises, perlin *perlin.Perlin, time float64) float64 {
+func sample_density(point Vec3, noises *Noises, time float64) float64 {
 	// return 0.05
 
-	noise_scale := 30.0
+	noise_scale := 50.0
 	noise_phase := time * 4
 	noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
 	noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*0))
@@ -280,7 +280,7 @@ func sample_density(point Vec3, noises *Noises, perlin *perlin.Perlin, time floa
 	noisef_0 := noise1
 
 	perlin_scale_1 := 2.0
-	perlin_phase_1 := time * 1
+	perlin_phase_1 := time * 0.5
 	perlin_1 := noises.perlin_gen.Noise3D(
 		// perlin_1 := noises.perlin_values.getf(
 		point.X*perlin_scale_1+perlin_phase_1*1,
