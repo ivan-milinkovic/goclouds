@@ -23,8 +23,8 @@ func main() {
 	rl.InitWindow(int32(screen_w), int32(screen_h), "goclouds") // must be at the top
 
 	// prepare target image
-	vol_vport_w := 320 // viewport for volumetrics
-	vol_vport_h := 240
+	vol_vport_w := screen_w / 2 // viewport for volumetrics
+	vol_vport_h := screen_h / 2
 	pixel_count := vol_vport_w * vol_vport_h
 	image_target := ImageTarget{
 		Pixels: make([]Pixel, pixel_count),
@@ -63,7 +63,14 @@ func main() {
 		rl.BeginDrawing()
 		rl.ClearBackground(clear_color)
 		rl.UpdateTexture(tex, image_target.Pixels)
-		rl.DrawTexture(tex, int32(screen_w/2-vol_vport_w/2), int32(screen_h/2-vol_vport_h/2), rl.White)
+		// rl.DrawTexture(tex, int32(screen_w/2-vol_vport_w/2), int32(screen_h/2-vol_vport_h/2), rl.White)
+		rl.DrawTexturePro(
+			tex,
+			rl.NewRectangle(0, 0, float32(vol_vport_w), float32(vol_vport_h)),
+			rl.NewRectangle(0, 0, float32(screen_w), float32(screen_h)),
+			rl.NewVector2(0, 0), 0,
+			rl.White,
+		)
 		rl.DrawText(fmt.Sprintf("%v fps, dt: %.0fms", rl.GetFPS(), rl.GetFrameTime()*1000), 10, 10, 16, rl.White)
 		rl.EndDrawing()
 	}
