@@ -59,9 +59,6 @@ func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float
 					// colorf := march_solid(&ray, &sphere, &light)
 					colorf := march_volume(&ray, &sphere, &light, perlin_values, time)
 
-					// GetTime is extremelly slow duw to system calls
-					// mod := Vec3Fill(math.Sin(rl.GetTime() * 4)).Add(Vec3Fill(1))
-					// colorf = colorf.Mul(mod)
 					p := pixel_from_fcolor(colorf)
 					img.Pixels[y*img.W+x] = p
 				}
@@ -148,34 +145,7 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 			time = 0.0
 		}
 
-		noise_scale := 50.0
-		noise_phase := time * 10
-		noise_x := int(math.Abs(ray.origin.X*noise_scale + noise_phase*1))
-		noise_y := int(math.Abs(ray.origin.Y*noise_scale + noise_phase*0))
-		noise_z := int(math.Abs(ray.origin.Z*noise_scale*2 + noise_phase*1))
-		noise1 := noise_values.get(noise_x, noise_y)
-		noise2 := noise_values.get(noise_x, noise_z)
-		noisef_0 := (noise1 + noise2) * 0.5
-
-		// noise_scale_1 := 1.0
-		// noise_phase_1 := time * 2
-		// noisef_1 := perlin_gen.Noise3D(
-		// 	ray.origin.X*noise_scale_1+noise_phase_1*1,
-		// 	ray.origin.Y*noise_scale_1+noise_phase_1*0,
-		// 	ray.origin.Z*noise_scale_1+noise_phase_1*2,
-		// )
-
-		perlin_scale_2 := 6.0
-		perlin_phase_2 := time * 3
-		perlin_2 := perlin_gen.Noise3D(
-			ray.origin.X*perlin_scale_2+perlin_phase_2*1,
-			ray.origin.Y*perlin_scale_2+perlin_phase_2*0,
-			math.Abs(ray.origin.Z)*perlin_scale_2+perlin_phase_2*1, // see Noise3D implementation, falls back to 3D if z < 0
-		)
-		// perlin_2 = 1 - perlin_2
-
-		balance := 0.5
-		noisef := noisef_0*balance + perlin_2*(1-balance) //+ noisef_1 + 0.1
+		noisef := sample_noise(ray.origin, noise_values, perlin_gen, time)
 
 		// density := 0.025
 		density := noisef
@@ -191,8 +161,8 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 		// with light
 		sub_sphere_normal := ray_origin_in_sphere_space.Sub(sphere.C).Normalized()
 		light_factor := sub_sphere_normal.Dot((*light).dir)
-		light_amount := (1 - absorbed) * light_factor
-		// light_amount := (absorbed) * light_factor
+		// light_amount := (1 - absorbed) * light_factor * 0.5
+		light_amount := (absorbed) * light_factor * 0.2
 		point_light_color := light.color.Scale(light_amount)
 		// point_cloud_col := cloud_color.Scale(1.0 * (1 - absorbed))
 		point_cloud_col := cloud_color
@@ -206,4 +176,36 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 		volume_acc_dist += ds
 	}
 	return acc_color
+}
+
+func sample_noise(point Vec3, noise_values *DataMatrix[float64], perlin *perlin.Perlin, time float64) float64 {
+	noise_scale := 50.0
+	noise_phase := time * 10
+	noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
+	noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*0))
+	noise_z := int(math.Abs(point.Z*noise_scale*2 + noise_phase*1))
+	noise1 := noise_values.get(noise_x, noise_y)
+	noise2 := noise_values.get(noise_x, noise_z)
+	noisef_0 := (noise1 + noise2) * 0.5
+
+	// noise_scale_1 := 1.0
+	// noise_phase_1 := time * 2
+	// noisef_1 := perlin_gen.Noise3D(
+	// 	point.X*noise_scale_1+noise_phase_1*1,
+	// 	point.Y*noise_scale_1+noise_phase_1*0,
+	// 	point.Z*noise_scale_1+noise_phase_1*2,
+	// )
+
+	perlin_scale_2 := 6.0
+	perlin_phase_2 := time * 3
+	perlin_2 := perlin_gen.Noise3D(
+		point.X*perlin_scale_2+perlin_phase_2*1,
+		point.Y*perlin_scale_2+perlin_phase_2*0,
+		math.Abs(point.Z)*perlin_scale_2+perlin_phase_2*1, // see Noise3D implementation, falls back to 3D if z < 0
+	)
+	// perlin_2 = 1 - perlin_2
+
+	balance := 0.5
+	noisef := noisef_0*balance + perlin_2*(1-balance) //+ noisef_1 + 0.1
+	return noisef
 }
