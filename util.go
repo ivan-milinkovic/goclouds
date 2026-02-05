@@ -23,6 +23,16 @@ func pixel_from_fcolor(fcol Vec3) Pixel {
 	return p
 }
 
+func pixel_from_float4(fcol [4]float64) Pixel {
+	p := Pixel{
+		R: byte_color_value_from_float(fcol[0]),
+		G: byte_color_value_from_float(fcol[1]),
+		B: byte_color_value_from_float(fcol[2]),
+		A: byte_color_value_from_float(fcol[3]),
+	}
+	return p
+}
+
 func byte_color_value_from_float(f float64) byte {
 	vf := min(f*255, 255)
 	vf = max(vf, 0)

@@ -59,7 +59,7 @@ func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float
 					// colorf := march_solid(&ray, &sphere, &light)
 					colorf := march_volume(&ray, &sphere, &light, perlin_values, time)
 
-					p := pixel_from_fcolor(colorf)
+					p := pixel_from_float4(colorf)
 					img.Pixels[y*img.W+x] = p
 				}
 			}
@@ -109,7 +109,7 @@ func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec
 	}
 }
 
-func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, noise_values *DataMatrix[float64], time float64) Vec3 {
+func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, noise_values *DataMatrix[float64], time float64) [4]float64 {
 	ray := *starting_ray
 	cloud_color := Vec3Fill(0.5)
 	acc_color := Vec3Fill(0) // accumulated color
@@ -145,10 +145,7 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 			time = 0.0
 		}
 
-		noisef := sample_noise(ray.origin, noise_values, perlin_gen, time)
-
-		// density := 0.025
-		density := noisef
+		density := sample_density(ray.origin, noise_values, perlin_gen, time)
 		acc_density += density
 		absorbed := math.Exp(-volume_acc_dist * density) // Beer's law
 		absorbed *= 0.25
@@ -175,10 +172,10 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 		ray.origin = ray.origin.Add(dv)
 		volume_acc_dist += ds
 	}
-	return acc_color
+	return [4]float64{acc_color.X, acc_color.Y, acc_color.Z, 1.0}
 }
 
-func sample_noise(point Vec3, noise_values *DataMatrix[float64], perlin *perlin.Perlin, time float64) float64 {
+func sample_density(point Vec3, noise_values *DataMatrix[float64], perlin *perlin.Perlin, time float64) float64 {
 	// noise_scale := 25.0
 	// noise_phase := time * 10
 	// noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
