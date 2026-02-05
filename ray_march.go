@@ -276,8 +276,9 @@ func sample_density(point Vec3, noises *Noises, time float64) float64 {
 		point.Y*perlin_scale_1+perlin_phase_1*0,
 		point.Z*perlin_scale_1+perlin_phase_1*2,
 	)
+	perlin_1 = clamp01(perlin_1)
 
-	perlin_scale_2 := 8.0
+	perlin_scale_2 := 7.0
 	perlin_phase_2 := time * 1
 	perlin_2 := noises.perlin_gen.Noise3D(
 		// perlin_2 := noises.perlin_values.getf(
@@ -285,10 +286,10 @@ func sample_density(point Vec3, noises *Noises, time float64) float64 {
 		point.Y*perlin_scale_2+perlin_phase_2*0,
 		math.Abs(point.Z)*perlin_scale_2+perlin_phase_2*1, // see Noise3D implementation, falls back to 3D if z < 0
 	)
-	// perlin_2 = 1 - perlin_2
+	perlin_2 = clamp01(perlin_2)
 
 	// perlinf := perlin_2
-	perlinf := (perlin_1 + perlin_2) // * 0.5
+	perlinf := (perlin_1 + perlin_2) * 0.5
 
 	balance := 1.0                                   // cell texture is not good yet
 	noisef := noisef_0*(1-balance) + perlinf*balance //+ noisef_1 + 0.1
