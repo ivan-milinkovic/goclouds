@@ -11,8 +11,8 @@ import (
 var perlin_gen = perlin.NewPerlin(1.0, 1.5, 2, 1234) // contrast, zoom, iterations (details), seed
 
 var max_jumps = 40
-var cloud_color = Vec3Fill(0.5)
-var volume_resolution = 0.2
+var cloud_color = Vec3Fill(1.0)
+var volume_resolution = 0.1
 
 type ShadingType = int
 
@@ -61,22 +61,16 @@ func ray_march(img *ImageTarget, camera *Camera, noises *Noises, time float64) {
 	// 	origin: Vec3Fill(0),
 	// 	dir:    Vec3Make(0, 0, -1),
 	// }
-	// march(&ray, &sphere, &light)
+	// march_volume(&ray, &sphere, &light, noises, time)
 	// return
 
-	// Single-threaded
-	// for y := range img.H {
-	// 	for x := range img.W {
-	// 		ray := camera.MakeRay(x, y, img.W, img.H)
-	// 		colorf := march(&ray, &sphere, &light)
-
-	// 		mod := Vec3Fill(math.Sin(rl.GetTime() * 4)).Add(Vec3Fill(1))
-	// 		colorf = colorf.Mul(mod)
-	// 		p := pixel_from_fcolor(colorf)
-	// 		img.Pixels[y*img.W+x] = p
-	// 	}
+	// Test ray to the left of the sphere
+	// ray := Ray{
+	// 	origin: Vec3Fill(0),
+	// 	dir:    Vec3Make(0, math.Atan(0.5), -1).Normalized(),
 	// }
-	// fmt.Printf("Done all, frame %v\n", frame_id)
+	// march_volume(&ray, &sphere, &light, noises, time)
+	// return
 
 	// Multi-goroutine
 	var wg sync.WaitGroup
@@ -185,11 +179,6 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 	// when orientations are introduced, the normals will have to be transformed
 	// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
 
-	// sample perlin
-	if time > 1000000 {
-		time = 0.2
-	}
-
 	for {
 		point_in_sphere_space := ray.origin.Sub(sphere.C)
 		sdf := sdfSphere(point_in_sphere_space, sphere.R)
@@ -234,7 +223,8 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 		acc_distance += ds
 	}
 	density_compressed := math.Log(acc_density + 1) // desmos code: y=\log\left(x+1\right)
-	alpha := min(1.0, max(density_compressed, 0.0))
+	// density_compressed := acc_density
+	alpha := clamp01(density_compressed)
 	return [4]float64{acc_color.X, acc_color.Y, acc_color.Z, alpha}
 }
 
@@ -267,7 +257,7 @@ func march_through_volume_to_light(
 }
 
 func sample_density(point Vec3, noises *Noises, time float64) float64 {
-	// return 0.05
+	// return 0.0125
 
 	noise_scale := 50.0
 	noise_phase := time * 4
