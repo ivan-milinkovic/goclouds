@@ -9,6 +9,8 @@ import (
 )
 
 var perlin_gen = perlin.NewPerlin(0.1, 1.0, 2, 1234) // contrast, zoom, iterations (details), seed
+var max_jumps = 40
+var cloud_color = Vec3Fill(0.5)
 
 func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float64], time float64) {
 	sphere := Sphere{
@@ -111,38 +113,64 @@ func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec
 
 func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, noise_values *DataMatrix[float64], time float64) [4]float64 {
 	ray := *starting_ray
-	cloud_color := Vec3Fill(0.5)
-	acc_color := Vec3Fill(0) // accumulated color
-	acc_density := 0.0
-	volume_acc_dist := 0.0 // accumulated distance inside a volume
-	max_jumps := 40
+
 	jump_count := 0
-	prev_sdf := math.MaxFloat64
+	var acc_color [4]float64
+
 	for jump_count < max_jumps {
 		jump_count++
+		found := march_outside_volume(&ray, sphere, &jump_count)
+		if !found {
+			break
+		}
+
+		acc_color_v := march_through_volume(&ray, sphere, light, noise_values, time)
+		acc_color = f4add(acc_color, acc_color_v)
+	}
+	return acc_color
+}
+
+func march_outside_volume(ray *Ray, sphere *Sphere, jump_count *int) bool {
+	prev_sdf := math.MaxFloat64
+	for *jump_count < max_jumps {
+		*jump_count++
 
 		ray_origin_in_sphere_space := ray.origin.Sub(sphere.C)
 		sdf := sdfSphere(ray_origin_in_sphere_space, sphere.R)
 
-		if sdf > 0 { // outside of any volume
-			if sdf > prev_sdf { // break out early if moving away from all objects
-				break
-			}
-			prev_sdf = sdf
-			// advance ray outside of volumes
-			dv := ray.dir.Scale(sdf) // don't attempt to advance by zero
-			ray.origin = ray.origin.Add(dv)
-			continue
+		if sdf <= 0 {
+			return true // found a volume
+		}
+		if sdf > prev_sdf { // break out if moving away from all objects
+			return false
 		}
 
-		// inside volume
+		prev_sdf = sdf
+		// advance ray
+		dv := ray.dir.Scale(sdf) // don't attempt to advance by zero
+		ray.origin = ray.origin.Add(dv)
+	}
+	return false
+}
 
-		// when orientations are introduced, the normals will have to be transformed
-		// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
+func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noise_values *DataMatrix[float64], time float64) [4]float64 {
+	acc_density := 0.0
+	volume_acc_dist := 0.0   // accumulated distance inside a volume
+	acc_color := Vec3Fill(0) // accumulated color
 
-		// sample perlin
-		if time > 1000000 {
-			time = 0.0
+	// when orientations are introduced, the normals will have to be transformed
+	// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
+
+	// sample perlin
+	if time > 1000000 {
+		time = 0.0
+	}
+
+	for {
+		point_in_sphere_space := ray.origin.Sub(sphere.C)
+		sdf := sdfSphere(point_in_sphere_space, sphere.R)
+		if sdf > 0 {
+			break // went outside the volume
 		}
 
 		density := sample_density(ray.origin, noise_values, perlin_gen, time)
@@ -157,7 +185,8 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *DirectionalLight, no
 		// acc_color = acc_color.Add(cloud_color.Scale(0.5 * (1 - absorbed)))
 
 		// with light
-		sub_sphere_normal := ray_origin_in_sphere_space.Sub(sphere.C).Normalized()
+
+		sub_sphere_normal := point_in_sphere_space.Sub(sphere.C).Normalized()
 		light_factor := sub_sphere_normal.Dot((*light).dir)
 		light_amount := (absorbed) * light_factor * 0.2
 		point_light_color := light.color.Scale(light_amount)
