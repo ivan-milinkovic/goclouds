@@ -8,9 +8,36 @@ import (
 	"github.com/aquilax/go-perlin"
 )
 
-var perlin_gen = perlin.NewPerlin(0.1, 1.0, 2, 1234) // contrast, zoom, iterations (details), seed
+var perlin_gen = perlin.NewPerlin(1.0, 1.0, 2, 1234) // contrast, zoom, iterations (details), seed
 var max_jumps = 40
 var cloud_color = Vec3Fill(0.5)
+var volume_resolution = 0.05
+
+type ShadingType = int
+
+const (
+	ShadingType_NoLight         ShadingType = 0
+	ShadingType_NaiveLight      ShadingType = 1
+	ShadingType_RayMarchedLight ShadingType = 2
+)
+
+const shading_type = ShadingType_NaiveLight
+
+type Sphere struct {
+	C Vec3
+	R float64
+}
+
+type DirectionalLight struct {
+	dir   Vec3
+	color Vec3
+}
+
+type PointLight struct {
+	origin Vec3
+	dir    Vec3
+	color  Vec3
+}
 
 func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float64], time float64) {
 	sphere := Sphere{
@@ -19,9 +46,14 @@ func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float
 	}
 
 	light := DirectionalLight{
-		dir:   Vec3Make(-1.5, 1.5, 0.75).Normalized(),
+		dir:   Vec3Make(1, -0.25, 0).Normalized(),
 		color: Vec3Fill(1.0),
 	}
+
+	// light := PointLight{
+	// 	dir:   Vec3Make(-1.5, 1.5, 0.75).Normalized(),
+	// 	color: Vec3Fill(1.0),
+	// }
 
 	// Test ray at the center
 	// ray := Ray{
@@ -70,16 +102,6 @@ func ray_march(img *ImageTarget, camera *Camera, perlin_values *DataMatrix[float
 		y_mark += dH
 	}
 	wg.Wait()
-}
-
-type Sphere struct {
-	C Vec3
-	R float64
-}
-
-type DirectionalLight struct {
-	dir   Vec3
-	color Vec3
 }
 
 func march_solid(starting_ray *Ray, sphere *Sphere, light *DirectionalLight) Vec3 {
@@ -141,21 +163,22 @@ func march_outside_volume(ray *Ray, sphere *Sphere, jump_count *int) bool {
 		if sdf <= 0 {
 			return true // found a volume
 		}
-		if sdf > prev_sdf { // break out if moving away from all objects
+
+		// break out if moving away from near objects (won't work if there are both near and far objects)
+		if sdf > prev_sdf {
 			return false
 		}
 
-		prev_sdf = sdf
-		// advance ray
-		dv := ray.dir.Scale(sdf) // don't attempt to advance by zero
+		dv := ray.dir.Scale(sdf) // advance ray; don't attempt to advance by zero
 		ray.origin = ray.origin.Add(dv)
+		prev_sdf = sdf
 	}
 	return false
 }
 
 func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noise_values *DataMatrix[float64], time float64) [4]float64 {
 	acc_density := 0.0
-	volume_acc_dist := 0.0   // accumulated distance inside a volume
+	acc_distance := 0.0      // accumulated distance inside the volume
 	acc_color := Vec3Fill(0) // accumulated color
 
 	// when orientations are introduced, the normals will have to be transformed
@@ -163,7 +186,7 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 
 	// sample perlin
 	if time > 1000000 {
-		time = 0.0
+		time = 0.2
 	}
 
 	for {
@@ -175,36 +198,72 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *DirectionalLight, noi
 
 		density := sample_density(ray.origin, noise_values, perlin_gen, time)
 		acc_density += density
-		absorbed := math.Exp(-volume_acc_dist * density) // Beer's law
-		absorbed *= 0.25
+		pass_through_amount := math.Exp(-acc_distance * acc_density) // Beer's law
 
 		// shade
+		switch shading_type {
+		case ShadingType_NoLight:
+			acc_color = cloud_color
 
-		// no light
-		// acc_color = acc_color.AddScalar(1 - absorbed)
-		// acc_color = acc_color.Add(cloud_color.Scale(0.5 * (1 - absorbed)))
+		case ShadingType_NaiveLight:
+			sub_sphere_normal := point_in_sphere_space.Sub(sphere.C).Normalized()
+			to_light_dir := (*light).dir.Scale(-1) // for directional light
+			light_factor := sub_sphere_normal.Dot(to_light_dir)
+			light_factor = max(0.2, light_factor)
+			light_amount := pass_through_amount * light_factor
+			point_light_color := light.color.Scale(light_amount)
+			point_col := cloud_color.Mul(point_light_color)
+			acc_color = acc_color.Add(point_col)
 
-		// with light
-
-		sub_sphere_normal := point_in_sphere_space.Sub(sphere.C).Normalized()
-		light_factor := sub_sphere_normal.Dot((*light).dir)
-		light_amount := (absorbed) * light_factor * 0.2
-		point_light_color := light.color.Scale(light_amount)
-		// point_cloud_col := cloud_color.Scale(1.0 * (1 - absorbed))
-		point_cloud_col := cloud_color
-		point_col := point_cloud_col.Mul(point_light_color)
-		acc_color = acc_color.Add(point_col)
+		case ShadingType_RayMarchedLight:
+			distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noise_values, time)
+			pass_through_light := math.Exp(-distance_sampled_to_light * density_to_light) // Beer's law
+			light_color_at_point := light.color.Scale(pass_through_light)
+			point_color := cloud_color.Mul(light_color_at_point)
+			pass_through_color := point_color.Scale(pass_through_amount)
+			acc_color = acc_color.Add(pass_through_color)
+		}
 
 		// advance ray inside volume
-		ds := sphere.R / 16.0
+		ds := volume_resolution
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
-		volume_acc_dist += ds
+		acc_distance += ds
 	}
-	return [4]float64{acc_color.X, acc_color.Y, acc_color.Z, 1.0}
+	alpha := min(1.0, max(math.Log(acc_density), 0.0))
+	return [4]float64{acc_color.X, acc_color.Y, acc_color.Z, alpha}
+}
+
+func march_through_volume_to_light(
+	point Vec3,
+	sphere *Sphere,
+	light *DirectionalLight,
+	noise_values *DataMatrix[float64],
+	time float64,
+) (distance, density float64) {
+	// directional light does not have an origin, just point towards where it's coming from (the oposite direction)
+	dir_to_light := light.dir.Scale(-1)
+	acc_distance := 0.0
+	acc_density := 0.0
+	for {
+		point_in_sphere_space := point.Sub(sphere.C)
+		sdf := sdfSphere(point_in_sphere_space, sphere.R)
+		if sdf > 0 {
+			break // went outside the volume
+		}
+
+		acc_density += sample_density(point, noise_values, perlin_gen, time)
+
+		// advance point towards light
+		dv := dir_to_light.Scale(volume_resolution)
+		point = point.Add(dv)
+		acc_distance += volume_resolution
+	}
+	return acc_distance, acc_density
 }
 
 func sample_density(point Vec3, noise_values *DataMatrix[float64], perlin *perlin.Perlin, time float64) float64 {
+	// return 0.05
 	// noise_scale := 25.0
 	// noise_phase := time * 10
 	// noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
