@@ -23,25 +23,25 @@ func NewNoises() *Noises {
 	var perlin_gen = perlin.NewPerlin(0.2, 1.0, 1, 1234) // contrast, zoom, iterations (details), seed
 
 	// does not tile, blocky appearance
-	// dim := 64
-	// w, h, d := dim, dim, dim
-	// perlin_values := NewMatrix3D[float64](w, h, d)
-	// for y := range h {
-	// 	for x := range w {
-	// 		for z := range d {
-	// 			fx := float64(x) / float64(w)
-	// 			fy := float64(y) / float64(h)
-	// 			fz := float64(z) / float64(d)
-	// 			val := clamp01(perlin_gen.Noise3D(fx, fy, fz))
-	// 			perlin_values.set(val, x, y, z)
-	// 		}
-	// 	}
-	// }
+	dim := 64
+	w, h, d := dim, dim, dim
+	perlin_values := NewMatrix3D[float64](w, h, d)
+	for y := range h {
+		for x := range w {
+			for z := range d {
+				fx := float64(x) / float64(w)
+				fy := float64(y) / float64(h)
+				fz := float64(z) / float64(d)
+				val := clamp01(perlin_gen.Noise3D(fx, fy, fz))
+				perlin_values.set(val, x, y, z)
+			}
+		}
+	}
 
 	return &Noises{
-		tex_values: noise_values,
-		// perlin_values: perlin_values,
-		perlin_gen: perlin_gen,
+		tex_values:    noise_values,
+		perlin_values: perlin_values,
+		perlin_gen:    perlin_gen,
 	}
 }
 
