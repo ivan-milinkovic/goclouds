@@ -41,7 +41,7 @@ const shading_type = ShadingType_RayMarchedLight
 const scale_volume_res_per_object = true // scale ray advance step based on object size
 const number_of_steps_for_object_scaling = 10
 const volume_resolution = 0.1 // when not scaling
-const ease_in_edges = false
+const ease_in_edges = true
 
 func ray_march(render_params *RenderParameters) {
 
@@ -329,7 +329,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 	acc_density := 0.0
 	acc_distance := 0.0 // accumulated distance inside the volume
 	acc_light_amount := 0.0
-	avg_sdf := 0.0
+	acc_sdf := 0.0
 	count := 0.0
 
 	var ds float64
@@ -348,7 +348,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		if sdf > 0 {
 			break // went outside the volume
 		}
-		avg_sdf += math.Abs(sdf)
+		acc_sdf += math.Abs(sdf)
 
 		density := sample_density(ray.origin, render_params.noises, render_params.time) //* volume_resolution
 		acc_density += density
@@ -364,13 +364,13 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 
 		count += 1.0
 	}
-	avg_sdf /= count
 	light_amount := acc_light_amount / count // average
 	diffuse := cloud_color.Scale(light_amount)
 	alpha := 1 - beers_law(acc_distance, acc_density)
 	if ease_in_edges {
-		alpha *= ease_in(avg_sdf) // soften edges, if avg. sdf is small, then only near the surface density was sampled
-		// alpha *= clamp01(avg_sdf)
+		// soften edges, if total sdf is small, then density was sampled only near the surface
+		acc_sdf *= 0.2
+		alpha *= ease_in(acc_sdf)
 	}
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
