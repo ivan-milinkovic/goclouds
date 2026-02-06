@@ -370,13 +370,13 @@ func march_through_volume_to_light(
 	noises *Noises,
 	time float64,
 ) (distance, density float64) {
-	// directional light does not have an origin, just point towards where it's coming from (the oposite direction)
-	dir_to_light := light.origin.Sub(point).Normalized()
+	light_origin_s := light.origin.Sub(sphere.C) // light origin in sphere space
+	point_s := point.Sub(sphere.C)               // point in sphere space
+	dir_to_light := light_origin_s.Sub(point_s).Normalized()
 	acc_distance := 0.0
 	acc_density := 0.0
 	for {
-		point_in_sphere_space := point.Sub(sphere.C)
-		sdf := sdfSphere(point_in_sphere_space, sphere.R)
+		sdf := sdfSphere(point_s, sphere.R)
 		if sdf > 0 {
 			acc_distance -= sdf // decrease by the over-shot distance outside the volume
 			break               // went outside the volume
@@ -386,7 +386,7 @@ func march_through_volume_to_light(
 
 		// advance point towards light
 		dv := dir_to_light.Scale(volume_resolution)
-		point = point.Add(dv)
+		point_s = point_s.Add(dv)
 		acc_distance += volume_resolution
 	}
 	return acc_distance, acc_density
