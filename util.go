@@ -88,5 +88,5 @@ func beers_law(distance, absorption float64) float64 {
 }
 
 func ease_in(x float64) float64 {
-	return clamp01(x * x)
+	return clamp01(x * x * x)
 }
