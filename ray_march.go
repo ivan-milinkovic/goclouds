@@ -186,7 +186,7 @@ func march_through_volume_no_light(ray *Ray, sphere *Sphere, light *Light, noise
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, noises, time, volume_resolution)
+		density := sample_density(ray.origin, noises, time) * volume_resolution
 
 		// advance ray inside volume
 		ds := volume_resolution
@@ -219,7 +219,7 @@ func march_through_volume_naive_light(ray *Ray, sphere *Sphere, light *Light, no
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, noises, time, volume_resolution)
+		density := sample_density(ray.origin, noises, time) * volume_resolution
 		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
 
@@ -260,7 +260,7 @@ func march_through_volume_raymarched_light_1(ray *Ray, sphere *Sphere, light *Li
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, noises, time, volume_resolution)
+		density := sample_density(ray.origin, noises, time) * volume_resolution
 		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
 
@@ -299,8 +299,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, sphere *Sphere, light *Li
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, noises, time, volume_resolution)
-		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
+		density := sample_density(ray.origin, noises, time) //* volume_resolution
 		acc_density += density
 
 		distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
@@ -340,7 +339,7 @@ func march_through_volume_to_light(
 			break               // went outside the volume
 		}
 
-		acc_density += sample_density(point, noises, time, volume_resolution)
+		acc_density += sample_density(point, noises, time) //* volume_resolution
 
 		// advance point towards light
 		dv := dir_to_light.Scale(volume_resolution)
@@ -350,9 +349,9 @@ func march_through_volume_to_light(
 	return acc_distance, acc_density
 }
 
-func sample_density(point Vec3, noises *Noises, time float64, volume_resolution float64) float64 {
+func sample_density(point Vec3, noises *Noises, time float64) float64 {
 	// scale by resolution so it looks the same regardless of resolution value
-	// return 0.05 * volume_resolution
+	// return 0.05
 
 	noise_scale := 50.0
 	noise_phase := time * 4
@@ -390,5 +389,5 @@ func sample_density(point Vec3, noises *Noises, time float64, volume_resolution 
 	balance := 1.0                                   // cell texture is not good yet
 	noisef := noisef_0*(1-balance) + perlinf*balance //+ noisef_1 + 0.1
 
-	return noisef //* volume_resolution
+	return noisef
 }
