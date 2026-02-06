@@ -44,3 +44,58 @@ func NewNoises() *Noises {
 		perlin_gen: perlin_gen,
 	}
 }
+
+/*
+// https://www.shadertoy.com/view/WdXGRj?__cf_chl_tk=9luEUdOzm.bxXjKfn8FkQQsZhrXf1A1g1eark8FC7YU-1770320491-1.0.1.1-rpvaq3.HnaxLY0F0kDek8EIrPjd.LC4KhjupDAtPrnA
+
+func Vec3Floor(v Vec3) Vec3 {
+	return Vec3{
+		math.Floor(v.X),
+		math.Floor(v.Y),
+		math.Floor(v.Z),
+	}
+}
+
+func Vec3Fract(v Vec3) Vec3 {
+	return Vec3{
+		math.Mod(v.X, 1.0),
+		math.Mod(v.Y, 1.0),
+		math.Mod(v.Z, 1.0),
+	}
+}
+
+func hash(n float64) float64 {
+	return math.Mod(math.Sin(n)*43758.5453, 1)
+}
+
+func mix(a, b, f float64) float64 {
+	return a*(1-f) + b*f
+}
+
+func noise(x Vec3) float64 {
+	p := Vec3Floor(x)
+	f := Vec3Fract(x)
+
+	f = f.Mul(f).Mul(f.Scale(2).AddScalar(-3).Scale(-1))
+
+	n := p.X + p.Y*57.0 + 113.0*p.Z
+
+	res := mix(mix(mix(hash(n+0.0), hash(n+1.0), f.X),
+		mix(hash(n+57.0), hash(n+58.0), f.X), f.Y),
+		mix(mix(hash(n+113.0), hash(n+114.0), f.X),
+			mix(hash(n+170.0), hash(n+171.0), f.X), f.Y), f.Z)
+	return res
+}
+
+func fbm(p Vec3) float64 {
+	var f float64
+	f = 0.5000 * noise(p)
+	// p = m * p * 2.02
+	f += 0.2500 * noise(p)
+	// p = m * p * 2.03
+	f += 0.12500 * noise(p)
+	// p = m * p * 2.01
+	f += 0.06250 * noise(p)
+	return f
+}
+*/
