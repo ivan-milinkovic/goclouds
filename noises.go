@@ -6,7 +6,7 @@ import (
 )
 
 type Noises struct {
-	cell_values   *DataMatrix[float64]
+	tex_values    *DataMatrix[float64]
 	perlin_values *Matrix3D[float64]
 	perlin_gen    *perlin.Perlin
 }
@@ -39,7 +39,7 @@ func NewNoises() *Noises {
 	// }
 
 	return &Noises{
-		cell_values: noise_values,
+		tex_values: noise_values,
 		// perlin_values: perlin_values,
 		perlin_gen: perlin_gen,
 	}

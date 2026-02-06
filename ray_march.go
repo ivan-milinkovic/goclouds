@@ -4,19 +4,16 @@ import (
 	"math"
 	"runtime"
 	"sync"
-
-	"github.com/aquilax/go-perlin"
 )
 
-var perlin_gen = perlin.NewPerlin(1.0, 1.5, 2, 1234) // contrast, zoom, iterations (details), seed
-
-var max_jumps = 40
-var cloud_color = Vec3Fill(0.95)
-var volume_resolution = 0.1
-
-const shading_type = ShadingType_RayMarchedLight
-const scale_volume_res_per_object = true
-const number_of_steps_for_object_scaling = 10
+type RenderParameters struct {
+	img    *ImageTarget
+	camera *Camera
+	light  *Light
+	sphere *Sphere
+	noises *Noises
+	time   float64
+}
 
 type ShadingType = int
 
@@ -37,11 +34,15 @@ type Light struct { // point light
 	color  Vec3
 }
 
-func ray_march(img *ImageTarget, camera *Camera, light *Light, noises *Noises, time float64) {
-	sphere := Sphere{
-		C: Vec3{0, 0, -1},
-		R: 1,
-	}
+var max_jumps = 40
+var cloud_color = Vec3Fill(0.95)
+var volume_resolution = 0.1
+
+const shading_type = ShadingType_RayMarchedLight
+const scale_volume_res_per_object = true
+const number_of_steps_for_object_scaling = 10
+
+func ray_march(render_params *RenderParameters) {
 
 	// Test ray at the center
 	// ray := Ray{
@@ -60,6 +61,9 @@ func ray_march(img *ImageTarget, camera *Camera, light *Light, noises *Noises, t
 	// march_volume(&ray, &sphere, light, noises, time)
 	// return
 
+	img := render_params.img
+	camera := *render_params.camera
+
 	// Multi-goroutine
 	var wg sync.WaitGroup
 	y_mark := 0 // run a single goroutine with data starting from from this index
@@ -68,27 +72,29 @@ func ray_march(img *ImageTarget, camera *Camera, light *Light, noises *Noises, t
 
 	for y_mark < img.H {
 		wg.Add(1)
-		go func(y_mark int, img *ImageTarget) {
+		go func(y_mark int, render_params *RenderParameters) {
 			end := min(y_mark+dH, img.H)
 			for y := y_mark; y < end; y++ {
 				for x := range img.W {
 					ray := camera.MakeRay(x, y, img.W, img.H)
-					// colorf := march_solid(&ray, &sphere, &light)
-					colorf := march_volume(&ray, &sphere, light, noises, time)
+					// colorf := march_solid(&ray, render_params)
+					colorf := march_volume(&ray, render_params)
 
 					p := pixel_from_fvec4(colorf)
 					img.Pixels[y*img.W+x] = p
 				}
 			}
 			wg.Done()
-		}(y_mark, img)
+		}(y_mark, render_params)
 		y_mark += dH
 	}
 	wg.Wait()
 }
 
-func march_solid(starting_ray *Ray, sphere *Sphere, light *Light) Vec4 {
+func march_solid(starting_ray *Ray, render_params *RenderParameters) Vec4 {
 	ray := *starting_ray
+	sphere := render_params.sphere
+	light := render_params.light
 	background := Vec4{0, 0, 0, 0}
 	count := 0
 	for {
@@ -117,7 +123,7 @@ func march_solid(starting_ray *Ray, sphere *Sphere, light *Light) Vec4 {
 	}
 }
 
-func march_volume(starting_ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) Vec4 {
+func march_volume(starting_ray *Ray, render_params *RenderParameters) Vec4 {
 	ray := *starting_ray
 
 	jump_count := 0
@@ -125,18 +131,19 @@ func march_volume(starting_ray *Ray, sphere *Sphere, light *Light, noises *Noise
 
 	for jump_count < max_jumps {
 		jump_count++
-		found := march_outside_volume(&ray, sphere, &jump_count)
+		found := march_outside_volume(&ray, render_params, &jump_count)
 		if !found {
 			break
 		}
 
-		acc_color_v := march_through_volume(&ray, sphere, light, noises, time)
+		acc_color_v := march_through_volume(&ray, render_params)
 		acc_color = acc_color.Add(acc_color_v)
 	}
 	return acc_color
 }
 
-func march_outside_volume(ray *Ray, sphere *Sphere, jump_count *int) bool {
+func march_outside_volume(ray *Ray, render_params *RenderParameters, jump_count *int) bool {
+	sphere := render_params.sphere
 	prev_sdf := math.MaxFloat64
 	for *jump_count < max_jumps {
 		*jump_count++
@@ -160,20 +167,22 @@ func march_outside_volume(ray *Ray, sphere *Sphere, jump_count *int) bool {
 	return false
 }
 
-func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) Vec4 {
+func march_through_volume(ray *Ray, render_params *RenderParameters) Vec4 {
 	switch shading_type {
 	case ShadingType_NoLight:
-		return march_through_volume_no_light(ray, sphere, light, noises, time)
+		return march_through_volume_no_light(ray, render_params)
 	case ShadingType_NaiveLight:
-		return march_through_volume_naive_light(ray, sphere, light, noises, time)
+		return march_through_volume_naive_light(ray, render_params)
 	case ShadingType_RayMarchedLight:
-		// return march_through_volume_raymarched_light_1(ray, sphere, light, noises, time)
-		return march_through_volume_raymarched_light_2(ray, sphere, light, noises, time)
+		// return march_through_volume_raymarched_light_1(ray, render_params)
+		return march_through_volume_raymarched_light_2(ray, render_params)
 	}
 	return Vec4{0.2, 0, 0.1, 0}
 }
 
-func march_through_volume_no_light(ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) Vec4 {
+func march_through_volume_no_light(ray *Ray, render_params *RenderParameters) Vec4 {
+	sphere := render_params.sphere
+
 	acc_density := 0.0
 	acc_distance := 0.0 // accumulated distance inside the volume
 	count := 0.0
@@ -188,7 +197,7 @@ func march_through_volume_no_light(ray *Ray, sphere *Sphere, light *Light, noise
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, noises, time) * volume_resolution
+		density := sample_density(ray.origin, render_params.noises, render_params.time) * volume_resolution
 
 		// advance ray inside volume
 		var ds float64
@@ -214,7 +223,10 @@ func march_through_volume_no_light(ray *Ray, sphere *Sphere, light *Light, noise
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 
-func march_through_volume_naive_light(ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) Vec4 {
+func march_through_volume_naive_light(ray *Ray, render_params *RenderParameters) Vec4 {
+	sphere := render_params.sphere
+	light := render_params.light
+
 	acc_density := 0.0
 	acc_distance := 0.0      // accumulated distance inside the volume
 	acc_color := Vec3Fill(0) // accumulated color
@@ -230,7 +242,7 @@ func march_through_volume_naive_light(ray *Ray, sphere *Sphere, light *Light, no
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, noises, time) * volume_resolution
+		density := sample_density(ray.origin, render_params.noises, render_params.time) * volume_resolution
 		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
 
@@ -260,7 +272,10 @@ func march_through_volume_naive_light(ray *Ray, sphere *Sphere, light *Light, no
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 
-func march_through_volume_raymarched_light_1(ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) Vec4 {
+func march_through_volume_raymarched_light_1(ray *Ray, render_params *RenderParameters) Vec4 {
+	sphere := render_params.sphere
+	light := render_params.light
+
 	acc_density := 0.0
 	acc_distance := 0.0      // accumulated distance inside the volume
 	acc_color := Vec3Fill(0) // accumulated color
@@ -276,11 +291,11 @@ func march_through_volume_raymarched_light_1(ray *Ray, sphere *Sphere, light *Li
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, noises, time) * volume_resolution
+		density := sample_density(ray.origin, render_params.noises, render_params.time) * volume_resolution
 		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
 
-		distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
+		distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, render_params.noises, render_params.time)
 		light_amount := beers_law(distance_sampled_to_light, density_to_light)
 		light_color_at_point := light.color.Scale(light_amount)
 		point_color := cloud_color.Mul(light_color_at_point)
@@ -303,7 +318,10 @@ func march_through_volume_raymarched_light_1(ray *Ray, sphere *Sphere, light *Li
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 
-func march_through_volume_raymarched_light_2(ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) Vec4 {
+func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderParameters) Vec4 {
+	sphere := render_params.sphere
+	light := render_params.light
+
 	acc_density := 0.0
 	acc_distance := 0.0 // accumulated distance inside the volume
 	acc_light_amount := 0.0
@@ -321,10 +339,10 @@ func march_through_volume_raymarched_light_2(ray *Ray, sphere *Sphere, light *Li
 		}
 		avg_sdf += math.Abs(sdf)
 
-		density := sample_density(ray.origin, noises, time) //* volume_resolution
+		density := sample_density(ray.origin, render_params.noises, render_params.time) //* volume_resolution
 		acc_density += density
 
-		distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
+		distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, render_params.noises, render_params.time)
 		light_amount := beers_law(distance_sampled_to_light, density_to_light)
 		acc_light_amount += light_amount
 
@@ -383,7 +401,7 @@ func sample_density(point Vec3, noises *Noises, time float64) float64 {
 	noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
 	noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*0))
 	// noise_z := int(math.Abs(point.Z*noise_scale*2 + noise_phase*1))
-	noise1 := noises.cell_values.get(noise_x, noise_y)
+	noise1 := noises.tex_values.get(noise_x, noise_y)
 	// noise2 := noise_values.get(noise_y, noise_z)
 	// noisef_0 := (noise1 + noise2) * 0.5
 	noisef_0 := noise1

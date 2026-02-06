@@ -56,17 +56,31 @@ func main() {
 		color:  Vec3Fill(1.0),
 	}
 
+	sphere := Sphere{
+		C: Vec3{0, 0, -1},
+		R: 1,
+	}
+
+	render_parameters := RenderParameters{
+		img:    &image_target,
+		camera: &camera,
+		light:  &light,
+		sphere: &sphere,
+		noises: noises,
+		time:   0.0,
+	}
+
 	// clear_color := rl.Black
 	clear_color := color.RGBA{5, 10, 30, 255}
-	// clear_color := color.RGBA{40, 40, 40, 255}
 
 	// rl.SetTargetFPS(60)
 	for !rl.WindowShouldClose() {
 
 		time := rl.GetTime()
+		render_parameters.time = time
 		// light.origin.X = 2 * math.Sin(time*0.5)
 		// light.origin = VRotate(&light.origin, &Vec3{0, 1, 0}, 0.1)
-		ray_march(&image_target, &camera, &light, noises, time)
+		ray_march(&render_parameters)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(clear_color)

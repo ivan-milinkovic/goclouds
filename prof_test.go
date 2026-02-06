@@ -31,7 +31,8 @@ func BenchmarkProf(b *testing.B) {
 		H:      screen_h,
 	}
 
-	noises := Noises{cell_values: NewDataMatrix[float64](10, 10)}
+	noises := NewNoises()
+	noises.tex_values = NewDataMatrix[float64](10, 10) // noises.tex_values.W becomes 0 for some reason if run without debugging
 
 	light := Light{
 		origin: Vec3Make(-1, 1, 0),
@@ -39,9 +40,23 @@ func BenchmarkProf(b *testing.B) {
 		color:  Vec3Fill(1.0),
 	}
 
+	sphere := Sphere{
+		C: Vec3{0, 0, -1},
+		R: 1,
+	}
+
+	render_parameters := RenderParameters{
+		img:    &image_target,
+		camera: &camera,
+		light:  &light,
+		sphere: &sphere,
+		noises: noises,
+		time:   0.0,
+	}
+
 	pprof.StartCPUProfile(f)
 	for b.Loop() {
-		ray_march(&image_target, &camera, &light, &noises, 1)
+		ray_march(&render_parameters)
 	}
 	pprof.StopCPUProfile()
 }
