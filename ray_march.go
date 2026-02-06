@@ -353,7 +353,7 @@ func sample_density(point Vec3, noises *Noises, time float64) float64 {
 	// scale by resolution so it looks the same regardless of resolution value
 	// return 0.05
 
-	noise_scale := 50.0
+	noise_scale := 100.0
 	noise_phase := time * 4
 	noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
 	noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*0))
