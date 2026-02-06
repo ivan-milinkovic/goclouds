@@ -36,11 +36,11 @@ type Light struct { // point light
 
 var max_jumps = 40
 var cloud_color = Vec3Fill(0.95)
-var volume_resolution = 0.1
 
 const shading_type = ShadingType_RayMarchedLight
 const scale_volume_res_per_object = true
 const number_of_steps_for_object_scaling = 10
+const volume_resolution = 0.1 // when not scaling
 
 func ray_march(render_params *RenderParameters) {
 
