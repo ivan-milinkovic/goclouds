@@ -382,11 +382,14 @@ func march_through_volume_to_light(
 	noises *Noises,
 	time float64,
 ) (distance, density float64) {
+	// As long as there are only translations, directions are OK in any translated space (not rotated or scaled)
 	light_origin_s := light.origin.Sub(sphere.C) // light origin in sphere space
 	point_s := point.Sub(sphere.C)               // point in sphere space
 	dir_to_light := light_origin_s.Sub(point_s).Normalized()
+
 	acc_distance := 0.0
 	acc_density := 0.0
+
 	var ds float64
 	if scale_volume_res_per_object {
 		ds = sphere.R / number_of_steps_for_object_scaling
