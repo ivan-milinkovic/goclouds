@@ -165,7 +165,8 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises
 	case ShadingType_NaiveLight:
 		return march_through_volume_naive_light(ray, sphere, light, noises, time)
 	case ShadingType_RayMarchedLight:
-		return march_through_volume_raymarched_light(ray, sphere, light, noises, time)
+		// return march_through_volume_raymarched_light_1(ray, sphere, light, noises, time)
+		return march_through_volume_raymarched_light_2(ray, sphere, light, noises, time)
 	}
 	return Vec4{0.2, 0, 0.1, 0}
 }
@@ -243,7 +244,45 @@ func march_through_volume_naive_light(ray *Ray, sphere *Sphere, light *Light, no
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 
-func march_through_volume_raymarched_light(ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) Vec4 {
+func march_through_volume_raymarched_light_1(ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) Vec4 {
+	acc_density := 0.0
+	acc_distance := 0.0      // accumulated distance inside the volume
+	acc_color := Vec3Fill(0) // accumulated color
+	acc_alpha := 0.0
+
+	// when orientations are introduced, the normals will have to be transformed
+	// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
+
+	for {
+		point_in_sphere_space := ray.origin.Sub(sphere.C)
+		sdf := sdfSphere(point_in_sphere_space, sphere.R)
+		if sdf > 0 {
+			break // went outside the volume
+		}
+
+		density := sample_density(ray.origin, noises, time, volume_resolution)
+		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
+		acc_density += density
+
+		distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
+		light_amount := beers_law(distance_sampled_to_light, density_to_light)
+		light_color_at_point := light.color.Scale(light_amount)
+		point_color := cloud_color.Mul(light_color_at_point)
+		acc_color = acc_color.Add(point_color)
+		acc_alpha += 1 - beers_law(acc_distance, acc_density)
+
+		// advance ray inside volume
+		ds := volume_resolution
+		dv := ray.dir.Scale(ds)
+		ray.origin = ray.origin.Add(dv)
+		acc_distance += ds
+	}
+	diffuse := acc_color
+	alpha := 1 - beers_law(acc_distance, acc_density)
+	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
+}
+
+func march_through_volume_raymarched_light_2(ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) Vec4 {
 	acc_density := 0.0
 	acc_distance := 0.0 // accumulated distance inside the volume
 	// acc_color := Vec3Fill(0) // accumulated color
@@ -263,12 +302,6 @@ func march_through_volume_raymarched_light(ray *Ray, sphere *Sphere, light *Ligh
 		density := sample_density(ray.origin, noises, time, volume_resolution)
 		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
-
-		// distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
-		// light_amount := beers_law(distance_sampled_to_light, density_to_light)
-		// light_color_at_point := light.color.Scale(light_amount)
-		// point_color := cloud_color.Mul(light_color_at_point)
-		// acc_color = acc_color.Add(point_color)
 
 		distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, noises, time)
 		light_amount := beers_law(distance_sampled_to_light, density_to_light)

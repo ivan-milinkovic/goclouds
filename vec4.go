@@ -4,6 +4,10 @@ type Vec4 struct {
 	X, Y, Z, W float64
 }
 
+func Vec4Fill(v float64) Vec4 {
+	return Vec4{X: v, Y: v, Z: v, W: v}
+}
+
 func (v Vec4) Scale(s float64) Vec4 {
 	return Vec4{
 		X: v.X * s,
