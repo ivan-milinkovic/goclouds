@@ -383,8 +383,8 @@ func sample_density(point Vec3, noises *Noises, time float64) float64 {
 	)
 	perlin_2 = clamp01(perlin_2)
 
-	// perlinf := perlin_2
-	perlinf := (perlin_1 + perlin_2) * 0.5
+	perlin_balance := 0.5
+	perlinf := ((1-perlin_balance)*perlin_1 + perlin_balance*perlin_2)
 
 	balance := 1.0                                   // cell texture is not good yet
 	noisef := noisef_0*(1-balance) + perlinf*balance //+ noisef_1 + 0.1
