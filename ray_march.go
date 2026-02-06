@@ -38,7 +38,7 @@ var max_jumps = 40
 var cloud_color = Vec3Fill(0.95)
 
 const shading_type = ShadingType_RayMarchedLight
-const scale_volume_res_per_object = true
+const scale_volume_res_per_object = true // scale ray advance step based on object size
 const number_of_steps_for_object_scaling = 10
 const volume_resolution = 0.1 // when not scaling
 
@@ -187,6 +187,13 @@ func march_through_volume_no_light(ray *Ray, render_params *RenderParameters) Ve
 	acc_distance := 0.0 // accumulated distance inside the volume
 	count := 0.0
 
+	var ds float64
+	if scale_volume_res_per_object {
+		ds = sphere.R / number_of_steps_for_object_scaling
+	} else {
+		ds = volume_resolution
+	}
+
 	// when orientations are introduced, the normals will have to be transformed
 	// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
 
@@ -200,12 +207,6 @@ func march_through_volume_no_light(ray *Ray, render_params *RenderParameters) Ve
 		density := sample_density(ray.origin, render_params.noises, render_params.time) * volume_resolution
 
 		// advance ray inside volume
-		var ds float64
-		if scale_volume_res_per_object {
-			ds = sphere.R / number_of_steps_for_object_scaling
-		} else {
-			ds = volume_resolution
-		}
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
 
@@ -232,6 +233,13 @@ func march_through_volume_naive_light(ray *Ray, render_params *RenderParameters)
 	acc_color := Vec3Fill(0) // accumulated color
 	count := 0.0
 
+	var ds float64
+	if scale_volume_res_per_object {
+		ds = sphere.R / number_of_steps_for_object_scaling
+	} else {
+		ds = volume_resolution
+	}
+
 	// when orientations are introduced, the normals will have to be transformed
 	// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
 
@@ -255,12 +263,6 @@ func march_through_volume_naive_light(ray *Ray, render_params *RenderParameters)
 		acc_color = acc_color.Add(point_col)
 
 		// advance ray inside volume
-		var ds float64
-		if scale_volume_res_per_object {
-			ds = sphere.R / number_of_steps_for_object_scaling
-		} else {
-			ds = volume_resolution
-		}
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
@@ -280,6 +282,13 @@ func march_through_volume_raymarched_light_1(ray *Ray, render_params *RenderPara
 	acc_distance := 0.0      // accumulated distance inside the volume
 	acc_color := Vec3Fill(0) // accumulated color
 	acc_alpha := 0.0
+
+	var ds float64
+	if scale_volume_res_per_object {
+		ds = sphere.R / number_of_steps_for_object_scaling
+	} else {
+		ds = volume_resolution
+	}
 
 	// when orientations are introduced, the normals will have to be transformed
 	// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
@@ -303,12 +312,6 @@ func march_through_volume_raymarched_light_1(ray *Ray, render_params *RenderPara
 		acc_alpha += 1 - beers_law(acc_distance, acc_density)
 
 		// advance ray inside volume
-		var ds float64
-		if scale_volume_res_per_object {
-			ds = sphere.R / number_of_steps_for_object_scaling
-		} else {
-			ds = volume_resolution
-		}
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
@@ -327,6 +330,13 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 	acc_light_amount := 0.0
 	avg_sdf := 0.0
 	count := 0.0
+
+	var ds float64
+	if scale_volume_res_per_object {
+		ds = sphere.R / number_of_steps_for_object_scaling
+	} else {
+		ds = volume_resolution
+	}
 
 	// when orientations are introduced, the normals will have to be transformed
 	// as long as there are only translations, directions are OK in any translated space (not rotated or scaled)
@@ -347,7 +357,6 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		acc_light_amount += light_amount
 
 		// advance ray inside volume
-		ds := volume_resolution
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
@@ -375,6 +384,13 @@ func march_through_volume_to_light(
 	dir_to_light := light_origin_s.Sub(point_s).Normalized()
 	acc_distance := 0.0
 	acc_density := 0.0
+	var ds float64
+	if scale_volume_res_per_object {
+		ds = sphere.R / number_of_steps_for_object_scaling
+	} else {
+		ds = volume_resolution
+	}
+
 	for {
 		sdf := sdfSphere(point_s, sphere.R)
 		if sdf > 0 {
@@ -385,7 +401,7 @@ func march_through_volume_to_light(
 		acc_density += sample_density(point, noises, time) //* volume_resolution
 
 		// advance point towards light
-		dv := dir_to_light.Scale(volume_resolution)
+		dv := dir_to_light.Scale(ds)
 		point_s = point_s.Add(dv)
 		acc_distance += volume_resolution
 	}
