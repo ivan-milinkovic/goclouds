@@ -217,11 +217,12 @@ func march_through_volume(ray *Ray, sphere *Sphere, light *Light, noises *Noises
 		count += 1.0
 	}
 	// diffuse := acc_color
-	avg_light := acc_light_amount / count
-	diffuse := cloud_color.Scale(avg_light)
+	light_amount := acc_light_amount / count // average
+	// light_amount := 1 - beers_law(acc_distance, acc_density)
+	diffuse := cloud_color.Scale(light_amount)
 	// alpha := asymptote_to_one_3(acc_density)
-	alpha := clamp01(0.8 * acc_density) // looks better
-	// alpha := 1 - beers_law(acc_distance, acc_density)
+	// alpha := clamp01(0.8 * acc_density) // looks better
+	alpha := 1 - beers_law(acc_distance, acc_density)
 	return [4]float64{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 
