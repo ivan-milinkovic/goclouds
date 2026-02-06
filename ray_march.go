@@ -14,6 +14,10 @@ var max_jumps = 40
 var cloud_color = Vec3Fill(0.95)
 var volume_resolution = 0.1
 
+const shading_type = ShadingType_RayMarchedLight
+const scale_volume_res_per_object = true
+const number_of_steps_for_object_scaling = 10
+
 type ShadingType = int
 
 const (
@@ -21,8 +25,6 @@ const (
 	ShadingType_NaiveLight      ShadingType = 1
 	ShadingType_RayMarchedLight ShadingType = 2
 )
-
-const shading_type = ShadingType_RayMarchedLight
 
 type Sphere struct {
 	C Vec3
@@ -189,13 +191,22 @@ func march_through_volume_no_light(ray *Ray, sphere *Sphere, light *Light, noise
 		density := sample_density(ray.origin, noises, time) * volume_resolution
 
 		// advance ray inside volume
-		ds := volume_resolution
+		var ds float64
+		if scale_volume_res_per_object {
+			ds = sphere.R / number_of_steps_for_object_scaling
+		} else {
+			ds = volume_resolution
+		}
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
 
 		acc_density += density
 		acc_distance += ds
+
 		count += 1.0
+		if count > float64(max_jumps) {
+			break
+		}
 	}
 	diffuse := cloud_color
 	background_passthrough := beers_law(acc_distance, acc_density)
@@ -232,7 +243,12 @@ func march_through_volume_naive_light(ray *Ray, sphere *Sphere, light *Light, no
 		acc_color = acc_color.Add(point_col)
 
 		// advance ray inside volume
-		ds := volume_resolution
+		var ds float64
+		if scale_volume_res_per_object {
+			ds = sphere.R / number_of_steps_for_object_scaling
+		} else {
+			ds = volume_resolution
+		}
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
@@ -272,7 +288,12 @@ func march_through_volume_raymarched_light_1(ray *Ray, sphere *Sphere, light *Li
 		acc_alpha += 1 - beers_law(acc_distance, acc_density)
 
 		// advance ray inside volume
-		ds := volume_resolution
+		var ds float64
+		if scale_volume_res_per_object {
+			ds = sphere.R / number_of_steps_for_object_scaling
+		} else {
+			ds = volume_resolution
+		}
 		dv := ray.dir.Scale(ds)
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
@@ -285,8 +306,8 @@ func march_through_volume_raymarched_light_1(ray *Ray, sphere *Sphere, light *Li
 func march_through_volume_raymarched_light_2(ray *Ray, sphere *Sphere, light *Light, noises *Noises, time float64) Vec4 {
 	acc_density := 0.0
 	acc_distance := 0.0 // accumulated distance inside the volume
-	// acc_color := Vec3Fill(0) // accumulated color
 	acc_light_amount := 0.0
+	avg_sdf := 0.0
 	count := 0.0
 
 	// when orientations are introduced, the normals will have to be transformed
@@ -298,6 +319,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, sphere *Sphere, light *Li
 		if sdf > 0 {
 			break // went outside the volume
 		}
+		avg_sdf += math.Abs(sdf)
 
 		density := sample_density(ray.origin, noises, time) //* volume_resolution
 		acc_density += density
@@ -314,9 +336,12 @@ func march_through_volume_raymarched_light_2(ray *Ray, sphere *Sphere, light *Li
 
 		count += 1.0
 	}
+	avg_sdf /= count
 	light_amount := acc_light_amount / count // average
 	diffuse := cloud_color.Scale(light_amount)
 	alpha := 1 - beers_law(acc_distance, acc_density)
+	// alpha *= ease_in(avg_sdf) // soften edges, if avg. sdf is small, then only near the surface density was sampled
+	// alpha *= clamp01(avg_sdf)
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 

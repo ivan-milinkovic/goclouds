@@ -86,3 +86,7 @@ func beers_law(distance, absorption float64) float64 {
 	// desmos code: y=\exp\left(-x\cdot d\right)
 	return math.Exp(-distance * absorption)
 }
+
+func ease_in(x float64) float64 {
+	return clamp01(x * x)
+}
