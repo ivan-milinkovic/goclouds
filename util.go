@@ -17,12 +17,22 @@ func ImageFromRGBA(pixels []Pixel, img_bytes *[]byte, w, h int) *rl.Image {
 	return img
 }
 
-func pixel_from_fcolor(fcol Vec3) Pixel {
+func pixel_from_fvec3(fcol Vec3) Pixel {
 	p := Pixel{
 		R: byte_color_value_from_float(fcol.X),
 		G: byte_color_value_from_float(fcol.Y),
 		B: byte_color_value_from_float(fcol.Z),
 		A: 255,
+	}
+	return p
+}
+
+func pixel_from_fvec4(fcol Vec4) Pixel {
+	p := Pixel{
+		R: byte_color_value_from_float(fcol.X),
+		G: byte_color_value_from_float(fcol.Y),
+		B: byte_color_value_from_float(fcol.Z),
+		A: byte_color_value_from_float(fcol.W),
 	}
 	return p
 }
@@ -49,15 +59,6 @@ func clamp(val, minv, maxv float64) float64 {
 
 func clamp01(val float64) float64 {
 	return clamp(val, 0, 1)
-}
-
-func f4add(v1 [4]float64, v2 [4]float64) [4]float64 {
-	return [4]float64{
-		v1[0] + v2[0],
-		v1[1] + v2[1],
-		v1[2] + v2[2],
-		v1[3] + v2[3],
-	}
 }
 
 func asymptote_to_one_1(x float64) float64 {
