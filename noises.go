@@ -6,7 +6,7 @@ import (
 )
 
 type Noises struct {
-	tex_values    *DataMatrix[float64]
+	tex_values    *Matrix2D[float64]
 	perlin_values *Matrix3D[float64]
 	perlin_gen    *perlin.Perlin
 }

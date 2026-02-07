@@ -423,7 +423,7 @@ func sample_density(point Vec3, noises *Noises, time float64) float64 {
 	noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
 	noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*1))
 	// noise_z := int(math.Abs(point.Z*noise_scale*2 + noise_phase*1))
-	noise1 := noises.tex_values.get(noise_x, noise_y)
+	noise1 := noises.tex_values.getWrap(noise_x, noise_y)
 	// noise2 := noises.tex_values.get(noise_y, noise_z)
 	// noisef_0 := (noise1 + noise2) * 0.5
 	noisef_0 := noise1
