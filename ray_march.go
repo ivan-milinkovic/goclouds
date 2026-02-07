@@ -444,7 +444,7 @@ func sample_density(point Vec3, noises *Noises, time float64) float64 {
 		perlin_scale_1 := 2.0
 		perlin_phase_1 := time * 0.5
 		perlin_1 := noises.perlin_gen.Noise3D(
-			// perlin_1 := noises.perlin_values.getf(
+			// perlin_1 := noises.perlin_values.getFromFloatsWrap(
 			point.X*perlin_scale_1+perlin_phase_1*1,
 			point.Y*perlin_scale_1+perlin_phase_1*0,
 			point.Z*perlin_scale_1+perlin_phase_1*2,
@@ -454,7 +454,7 @@ func sample_density(point Vec3, noises *Noises, time float64) float64 {
 		perlin_scale_2 := 7.0
 		perlin_phase_2 := time * 1
 		perlin_2 := noises.perlin_gen.Noise3D(
-			// perlin_2 := noises.perlin_values.getf(
+			// perlin_2 := noises.perlin_values.getFromFloatsWrap(
 			point.X*perlin_scale_2+perlin_phase_2*1,
 			point.Y*perlin_scale_2+perlin_phase_2*0,
 			math.Abs(point.Z)*perlin_scale_2+perlin_phase_2*1, // see Noise3D implementation, falls back to 3D if z < 0
