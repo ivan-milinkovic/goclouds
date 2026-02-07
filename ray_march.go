@@ -415,45 +415,54 @@ func march_through_volume_to_light(
 }
 
 func sample_density(point Vec3, noises *Noises, time float64) float64 {
-	// scale by resolution so it looks the same regardless of resolution value
+
 	// return 0.05
 
-	noise_scale := 20.0
-	noise_phase := time * 4
-	noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
-	noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*1))
-	// noise_z := int(math.Abs(point.Z*noise_scale*2 + noise_phase*1))
-	noise1 := noises.tex_values.getWrap(noise_x, noise_y)
-	// noise2 := noises.tex_values.get(noise_y, noise_z)
-	// noisef_0 := (noise1 + noise2) * 0.5
-	noisef_0 := noise1
-	// return noisef_0
+	// {
+	// 	scale := 1.0
+	// 	phase := time * 0.2
+	// 	coords := point.Scale(scale).Add(Vec3{phase * 1, phase * 0, phase * 2})
+	// 	perlin_1 := noises.perlin_values.getFromVectorWrap(coords)
+	// 	perlin_1 = clamp01(perlin_1)
+	// 	return perlin_1
+	// }
 
-	perlin_scale_1 := 2.0
-	perlin_phase_1 := time * 0.5
-	perlin_1 := noises.perlin_gen.Noise3D(
-		// perlin_1 := noises.perlin_values.getf(
-		point.X*perlin_scale_1+perlin_phase_1*1,
-		point.Y*perlin_scale_1+perlin_phase_1*0,
-		point.Z*perlin_scale_1+perlin_phase_1*2,
-	)
-	perlin_1 = clamp01(perlin_1)
+	// {
+	// 	noise_scale := 20.0
+	// 	noise_phase := time * 4
+	// 	noise_x := int(math.Abs(point.X*noise_scale + noise_phase*1))
+	// 	noise_y := int(math.Abs(point.Y*noise_scale + noise_phase*1))
+	// 	// noise_z := int(math.Abs(point.Z*noise_scale*2 + noise_phase*1))
+	// 	noise1 := noises.tex_values.getWrap(noise_x, noise_y)
+	// 	// noise2 := noises.tex_values.get(noise_y, noise_z)
+	// 	// noisef_0 := (noise1 + noise2) * 0.5
+	// 	noisef := noise1
+	// 	return noisef
+	// }
 
-	perlin_scale_2 := 7.0
-	perlin_phase_2 := time * 1
-	perlin_2 := noises.perlin_gen.Noise3D(
-		// perlin_2 := noises.perlin_values.getf(
-		point.X*perlin_scale_2+perlin_phase_2*1,
-		point.Y*perlin_scale_2+perlin_phase_2*0,
-		math.Abs(point.Z)*perlin_scale_2+perlin_phase_2*1, // see Noise3D implementation, falls back to 3D if z < 0
-	)
-	perlin_2 = clamp01(perlin_2)
+	{
+		perlin_scale_1 := 2.0
+		perlin_phase_1 := time * 0.5
+		perlin_1 := noises.perlin_gen.Noise3D(
+			// perlin_1 := noises.perlin_values.getf(
+			point.X*perlin_scale_1+perlin_phase_1*1,
+			point.Y*perlin_scale_1+perlin_phase_1*0,
+			point.Z*perlin_scale_1+perlin_phase_1*2,
+		)
+		perlin_1 = clamp01(perlin_1)
 
-	perlin_balance := 0.5
-	perlinf := ((1-perlin_balance)*perlin_1 + perlin_balance*perlin_2)
+		perlin_scale_2 := 7.0
+		perlin_phase_2 := time * 1
+		perlin_2 := noises.perlin_gen.Noise3D(
+			// perlin_2 := noises.perlin_values.getf(
+			point.X*perlin_scale_2+perlin_phase_2*1,
+			point.Y*perlin_scale_2+perlin_phase_2*0,
+			math.Abs(point.Z)*perlin_scale_2+perlin_phase_2*1, // see Noise3D implementation, falls back to 3D if z < 0
+		)
+		perlin_2 = clamp01(perlin_2)
 
-	balance := 1.0                                   // cell texture is not good yet
-	noisef := noisef_0*(1-balance) + perlinf*balance //+ noisef_1 + 0.1
-
-	return noisef
+		balance := 0.5
+		noisef := ((1-balance)*perlin_1 + balance*perlin_2)
+		return noisef
+	}
 }

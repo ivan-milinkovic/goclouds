@@ -45,7 +45,35 @@ func (dm *Matrix3D[T]) get(x, y, z int) T {
 	return dm.values[i]
 }
 
-func (dm *Matrix3D[T]) getf(x, y, z float64) T {
+func (dm *Matrix3D[T]) getFromVectorWrap(v Vec3) T {
+	return dm.getFromFloatsWrap(v.X, v.Y, v.Z)
+}
+
+func (dm *Matrix3D[T]) getFromFloatsWrap(x, y, z float64) T {
+	ix := int(x * float64(dm.W))
+	iy := int(y * float64(dm.H))
+	iz := int(z * float64(dm.D))
+
+	ix %= dm.W
+	iy %= dm.H
+	iz %= dm.D
+
+	if ix < 0 {
+		ix = dm.W + ix
+	}
+	if iy < 0 {
+		iy = dm.H + iy
+	}
+	if iz < 0 {
+		iz = dm.D + iz
+	}
+
+	i := iy*dm.W*dm.D + ix*dm.D + iz
+
+	return dm.values[i]
+}
+
+func (dm *Matrix3D[T]) getFromFloatsWrap2(x, y, z float64) T {
 	// get parts after decimal point
 	x0 := math.Abs(math.Mod(x, 1))
 	y0 := math.Abs(math.Mod(y, 1))
