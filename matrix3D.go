@@ -2,6 +2,7 @@ package main
 
 import "math"
 
+// z-x-y memory layout
 type Matrix3D[T any] struct {
 	values  []T
 	W, H, D int

@@ -6,11 +6,15 @@ type Matrix2D[T any] struct {
 }
 
 func NewDataMatrix[T any](w, h int) *Matrix2D[T] {
-	return &Matrix2D[T]{
-		values: make([]T, w*h),
-		W:      w,
-		H:      h,
-	}
+	var m Matrix2D[T]
+	InitMatrix2D(&m, w, h)
+	return &m
+}
+
+func InitMatrix2D[T any](m *Matrix2D[T], w, h int) {
+	m.values = make([]T, w*h)
+	m.W = w
+	m.H = h
 }
 
 func (dm *Matrix2D[T]) setWrap(value T, x int, y int) {
