@@ -61,6 +61,10 @@ func clamp01(val float64) float64 {
 	return clamp(val, 0, 1)
 }
 
+func mix(a, b, f float64) float64 {
+	return a*(1-f) + b*f
+}
+
 func asymptote_to_one_1(x float64) float64 {
 	// desmos code: y\ =\ \frac{x}{\left(x+1\right)}
 	return x / (x + 1)
