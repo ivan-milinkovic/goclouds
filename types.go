@@ -49,3 +49,12 @@ const (
 	DensityType_PerlinPreCalc = 2
 	DensityType_Uniform       = 3
 )
+
+type RenderParameters struct {
+	img    *ImageTarget
+	camera *Camera
+	light  *Light
+	sphere *Sphere
+	noises *Noises
+	time   float64
+}

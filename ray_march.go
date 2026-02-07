@@ -6,15 +6,6 @@ import (
 	"sync"
 )
 
-type RenderParameters struct {
-	img    *ImageTarget
-	camera *Camera
-	light  *Light
-	sphere *Sphere
-	noises *Noises
-	time   float64
-}
-
 func ray_march(render_params *RenderParameters) {
 
 	// Test ray at the center
