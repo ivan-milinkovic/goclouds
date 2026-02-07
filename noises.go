@@ -22,7 +22,7 @@ func NewNoises() *Noises {
 
 	// does not tile, blocky appearance
 	var perlin_pre_gen = perlin.NewPerlin(1.0, 2, 1, 1234) // contrast, zoom, iterations (details), seed
-	dim := 64
+	dim := 128
 	w, h, d := dim, dim, dim
 	perlin_scale := 8.0
 	perlin_values := NewMatrix3D[float64](w, h, d)
