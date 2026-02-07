@@ -36,7 +36,7 @@ func sample_density_runtime_perlin(point Vec3, noises *Noises, time float64) flo
 		p2 = clamp01(p2)
 	}
 
-	p := mix(p1, p2, 0.0)
+	p := mix(p1, p2, 0.5)
 	return p
 }
 

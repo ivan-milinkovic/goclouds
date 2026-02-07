@@ -15,34 +15,6 @@ type RenderParameters struct {
 	time   float64
 }
 
-type ShadingType = int
-
-const (
-	ShadingType_NoLight         ShadingType = 0
-	ShadingType_NaiveLight      ShadingType = 1
-	ShadingType_RayMarchedLight ShadingType = 2
-)
-
-type Sphere struct {
-	C Vec3
-	R float64
-}
-
-type Light struct { // point light
-	origin Vec3
-	dir    Vec3
-	color  Vec3
-}
-
-var max_jumps = 40
-var cloud_color = Vec3Fill(0.95)
-
-const shading_type = ShadingType_RayMarchedLight
-const scale_volume_res_per_object = true // scale ray advance step based on object size
-const number_of_steps_for_object_scaling = 10
-const volume_resolution = 0.1 // when not scaling
-const ease_in_edges = true
-
 func ray_march(render_params *RenderParameters) {
 
 	// Test ray at the center
