@@ -102,7 +102,7 @@ func march_volume(starting_ray *Ray, render_params *RenderParameters) Vec4 {
 	jump_count := 0
 	var acc_color Vec4
 
-	for jump_count < max_jumps {
+	for jump_count < MAX_JUMPS {
 		jump_count++
 		found := march_outside_volume(&ray, render_params, &jump_count)
 		if !found {
@@ -118,7 +118,7 @@ func march_volume(starting_ray *Ray, render_params *RenderParameters) Vec4 {
 func march_outside_volume(ray *Ray, render_params *RenderParameters, jump_count *int) bool {
 	sphere := render_params.sphere
 	prev_sdf := math.MaxFloat64
-	for *jump_count < max_jumps {
+	for *jump_count < MAX_JUMPS {
 		*jump_count++
 
 		ray_origin_in_sphere_space := ray.origin.Sub(sphere.C)
@@ -141,7 +141,7 @@ func march_outside_volume(ray *Ray, render_params *RenderParameters, jump_count 
 }
 
 func march_through_volume(ray *Ray, render_params *RenderParameters) Vec4 {
-	switch shading_type {
+	switch SHADING_TYPE {
 	case ShadingType_NoLight:
 		return march_through_volume_no_light(ray, render_params)
 	case ShadingType_NaiveLight:
@@ -161,10 +161,10 @@ func march_through_volume_no_light(ray *Ray, render_params *RenderParameters) Ve
 	count := 0.0
 
 	var ds float64
-	if scale_volume_res_per_object {
-		ds = sphere.R / number_of_steps_for_object_scaling
+	if SCALE_STEP_RES_TO_OBJECT {
+		ds = sphere.R / NUM_STEPS_OBJECT_SCALING
 	} else {
-		ds = volume_resolution
+		ds = VOLUME_RESOLUTION
 	}
 
 	// when orientations are introduced, the normals will have to be transformed
@@ -177,7 +177,7 @@ func march_through_volume_no_light(ray *Ray, render_params *RenderParameters) Ve
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, render_params.noises, render_params.time) * volume_resolution
+		density := sample_density(ray.origin, render_params.noises, render_params.time) * VOLUME_RESOLUTION
 
 		// advance ray inside volume
 		dv := ray.dir.Scale(ds)
@@ -187,7 +187,7 @@ func march_through_volume_no_light(ray *Ray, render_params *RenderParameters) Ve
 		acc_distance += ds
 
 		count += 1.0
-		if count > float64(max_jumps) {
+		if count > float64(MAX_JUMPS) {
 			break
 		}
 	}
@@ -207,10 +207,10 @@ func march_through_volume_naive_light(ray *Ray, render_params *RenderParameters)
 	count := 0.0
 
 	var ds float64
-	if scale_volume_res_per_object {
-		ds = sphere.R / number_of_steps_for_object_scaling
+	if SCALE_STEP_RES_TO_OBJECT {
+		ds = sphere.R / NUM_STEPS_OBJECT_SCALING
 	} else {
-		ds = volume_resolution
+		ds = VOLUME_RESOLUTION
 	}
 
 	// when orientations are introduced, the normals will have to be transformed
@@ -223,7 +223,7 @@ func march_through_volume_naive_light(ray *Ray, render_params *RenderParameters)
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, render_params.noises, render_params.time) * volume_resolution
+		density := sample_density(ray.origin, render_params.noises, render_params.time) * VOLUME_RESOLUTION
 		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
 
@@ -257,10 +257,10 @@ func march_through_volume_raymarched_light_1(ray *Ray, render_params *RenderPara
 	acc_alpha := 0.0
 
 	var ds float64
-	if scale_volume_res_per_object {
-		ds = sphere.R / number_of_steps_for_object_scaling
+	if SCALE_STEP_RES_TO_OBJECT {
+		ds = sphere.R / NUM_STEPS_OBJECT_SCALING
 	} else {
-		ds = volume_resolution
+		ds = VOLUME_RESOLUTION
 	}
 
 	// when orientations are introduced, the normals will have to be transformed
@@ -273,7 +273,7 @@ func march_through_volume_raymarched_light_1(ray *Ray, render_params *RenderPara
 			break // went outside the volume
 		}
 
-		density := sample_density(ray.origin, render_params.noises, render_params.time) * volume_resolution
+		density := sample_density(ray.origin, render_params.noises, render_params.time) * VOLUME_RESOLUTION
 		// density *= asymptote_to_one(math.Abs(sdf), 10.0) // make density closer to the surface softer
 		acc_density += density
 
@@ -305,10 +305,10 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 	count := 0.0
 
 	var ds float64
-	if scale_volume_res_per_object {
-		ds = sphere.R / number_of_steps_for_object_scaling
+	if SCALE_STEP_RES_TO_OBJECT {
+		ds = sphere.R / NUM_STEPS_OBJECT_SCALING
 	} else {
-		ds = volume_resolution
+		ds = VOLUME_RESOLUTION
 	}
 
 	// when orientations are introduced, the normals will have to be transformed
@@ -339,7 +339,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 	light_amount := acc_light_amount / count // average
 	diffuse := cloud_color.Scale(light_amount)
 	alpha := 1 - beers_law(acc_distance, acc_density)
-	if ease_in_edges {
+	if EASE_IN_EDGES {
 		// soften edges, if total sdf is small, then density was sampled only near the surface
 		acc_sdf *= 0.2
 		alpha *= ease_in(acc_sdf)
@@ -363,10 +363,10 @@ func march_through_volume_to_light(
 	acc_density := 0.0
 
 	var ds float64
-	if scale_volume_res_per_object {
-		ds = sphere.R / number_of_steps_for_object_scaling
+	if SCALE_STEP_RES_TO_OBJECT {
+		ds = sphere.R / NUM_STEPS_OBJECT_SCALING
 	} else {
-		ds = volume_resolution
+		ds = VOLUME_RESOLUTION
 	}
 
 	for {
@@ -381,7 +381,7 @@ func march_through_volume_to_light(
 		// advance point towards light
 		dv := dir_to_light.Scale(ds)
 		point_s = point_s.Add(dv)
-		acc_distance += volume_resolution
+		acc_distance += VOLUME_RESOLUTION
 	}
 	return acc_distance, acc_density
 }

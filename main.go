@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	rl.InitWindow(int32(window_width), int32(window_height), "goclouds") // must be at the top
+	rl.InitWindow(int32(WINDOW_WIDTH), int32(WINDOW_HEIGHT), "goclouds") // must be at the top
 
 	state := initialize()
 
@@ -59,7 +59,7 @@ func main() {
 		rl.DrawTexturePro(
 			*state.texture,
 			rl.NewRectangle(0, 0, float32(state.image_target.W), float32(state.image_target.H)),
-			rl.NewRectangle(0, 0, float32(window_width), float32(window_height)),
+			rl.NewRectangle(0, 0, float32(WINDOW_WIDTH), float32(WINDOW_HEIGHT)),
 			rl.NewVector2(0, 0), 0,
 			rl.White,
 		)
@@ -72,11 +72,11 @@ func main() {
 
 func initialize() *State {
 	// prepare target image
-	pixel_count := vol_viewport_w * vol_viewport_h
+	pixel_count := VOL_VIEWPORT_W * VOL_VIEWPORT_H
 	image_target := ImageTarget{
 		Pixels: make([]Pixel, pixel_count),
-		W:      vol_viewport_w,
-		H:      vol_viewport_h,
+		W:      VOL_VIEWPORT_W,
+		H:      VOL_VIEWPORT_H,
 	}
 	for i := range pixel_count {
 		image_target.Pixels[i] = Pixel{R: 20, G: 20, B: 20, A: 255}
@@ -84,7 +84,7 @@ func initialize() *State {
 
 	// prepare texture
 	img_bytes := make([]byte, pixel_count*4) // used to copy to texture
-	img := ImageFromRGBA(image_target.Pixels, &img_bytes, vol_viewport_w, vol_viewport_h)
+	img := ImageFromRGBA(image_target.Pixels, &img_bytes, VOL_VIEWPORT_W, VOL_VIEWPORT_H)
 	tex := rl.LoadTextureFromImage(img)
 
 	// right-handed coordinate system
@@ -93,7 +93,7 @@ func initialize() *State {
 	camera := Camera{
 		origin: camera_origin,
 		p00:    Vec3{0, 0, camera_origin.Z + near_plane_d},
-		aspect: float64(vol_viewport_w) / float64(vol_viewport_h),
+		aspect: float64(VOL_VIEWPORT_W) / float64(VOL_VIEWPORT_H),
 	}
 
 	// prepare perlin
