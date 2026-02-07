@@ -22,5 +22,11 @@ func (dm *DataMatrix[T]) set(value T, x int, y int) {
 func (dm *DataMatrix[T]) get(x, y int) T {
 	ix := x % dm.W
 	iy := y % dm.H
+	if ix < 0 {
+		ix = dm.W - ix
+	}
+	if iy < 0 {
+		iy = dm.H - iy
+	}
 	return dm.values[iy*dm.W+ix]
 }

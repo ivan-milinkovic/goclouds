@@ -30,6 +30,15 @@ func (dm *Matrix3D[T]) get(x, y, z int) T {
 	ix := x % dm.W
 	iy := y % dm.H
 	iz := z % dm.D
+	if ix < 0 {
+		ix = dm.W + ix
+	}
+	if iy < 0 {
+		iy = dm.H + iy
+	}
+	if iz < 0 {
+		iz = dm.D + iz
+	}
 
 	i := iy*dm.W*dm.D + ix*dm.D + iz
 	return dm.values[i]

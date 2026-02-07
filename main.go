@@ -17,6 +17,8 @@ type ImageTarget struct {
 	H      int
 }
 
+const PREVIEW_PERLIN = false
+
 func main() {
 	screen_w := 640
 	screen_h := 480
@@ -75,14 +77,32 @@ func main() {
 	// clear_color := rl.Black
 	clear_color := color.RGBA{5, 10, 30, 255}
 
+	perlin_preview_z := 0
+
 	// rl.SetTargetFPS(60)
 	for !rl.WindowShouldClose() {
 
 		time := rl.GetTime()
 		render_parameters.time = time
+		if rl.IsKeyReleased(rl.KeyUp) {
+			perlin_preview_z += 1
+		} else if rl.IsKeyReleased(rl.KeyDown) {
+			perlin_preview_z -= 1
+		}
 		// light.origin.X = 2 * math.Sin(time*0.5)
 		// light.origin = VRotate(&light.origin, &Vec3{0, 1, 0}, 0.1)
-		ray_march(&render_parameters)
+
+		if PREVIEW_PERLIN {
+			for y := range image_target.H {
+				for x := range image_target.W {
+					val := noises.perlin_values.get(x, y, perlin_preview_z)
+					px := pixel_from_fvec3(Vec3Fill(val))
+					image_target.Pixels[y*image_target.W+x] = px
+				}
+			}
+		} else {
+			ray_march(&render_parameters)
+		}
 
 		rl.BeginDrawing()
 		rl.ClearBackground(clear_color)
