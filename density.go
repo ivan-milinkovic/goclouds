@@ -3,11 +3,16 @@ package main
 import "math"
 
 func sample_density(point Vec3, noises *Noises, time float64) float64 {
-	// return 0.05
-	// return sample_density_runtime_perlin(point, noises, time)
-	// return sample_density_pre_calc_perlin_1(point, noises, time)
-	return sample_density_pre_calc_perlin_2(point, noises, time)
-	// return sample_density_2D_texture(point, noises, time)
+	switch density_type {
+	case DensityType_PerlinPreCalc:
+		return sample_density_pre_calc_perlin_2(point, noises, time)
+		// return sample_density_pre_calc_perlin_1(point, noises, time)
+		// return sample_density_2D_texture(point, noises, time)
+	case DensityType_PerlinRuntime:
+		return sample_density_runtime_perlin(point, noises, time)
+	default:
+		return 0.05
+	}
 }
 
 func sample_density_runtime_perlin(point Vec3, noises *Noises, time float64) float64 {

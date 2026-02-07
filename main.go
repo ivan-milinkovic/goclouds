@@ -30,6 +30,7 @@ func main() {
 	// rl.SetTargetFPS(60)
 	for !rl.WindowShouldClose() {
 
+		// Update
 		time := rl.GetTime()
 		render_parameters.time = time
 		if rl.IsKeyReleased(rl.KeyUp) {
@@ -37,24 +38,27 @@ func main() {
 		} else if rl.IsKeyReleased(rl.KeyDown) {
 			perlin_preview_z -= 1
 		}
-		// light.origin.X = 2 * math.Sin(time*0.5)
-		// light.origin = VRotate(&light.origin, &Vec3{0, 1, 0}, 0.1)
+		if rl.IsKeyReleased(rl.KeyOne) {
+			density_type = DensityType_PerlinRuntime
+		} else if rl.IsKeyReleased(rl.KeyTwo) {
+			density_type = DensityType_PerlinPreCalc
+		} else if rl.IsKeyReleased(rl.KeyThree) {
+			density_type = DensityType_Uniform
+		}
 
+		// state.light.origin.X = 2 * math.Sin(time*0.5)
+		// state.light.origin = VRotate(&state.light.origin, &Vec3{0, 1, 0}, 0.1)
+
+		// Render
 		if PREVIEW_PERLIN {
-			for y := range state.image_target.H {
-				for x := range state.image_target.W {
-					val := state.noises.perlin_values.get(x, y, perlin_preview_z)
-					px := pixel_from_fvec3(Vec3Fill(val))
-					state.image_target.Pixels[y*state.image_target.W+x] = px
-				}
-			}
+			write_perlin_to_image(state, perlin_preview_z)
 		} else {
 			ray_march(&render_parameters)
 		}
+		rl.UpdateTexture(*state.texture, state.image_target.Pixels)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(clear_color)
-		rl.UpdateTexture(*state.texture, state.image_target.Pixels)
 		// rl.DrawTexture(tex, int32(screen_w/2-vol_vport_w/2), int32(screen_h/2-vol_vport_h/2), rl.White)
 		rl.DrawTexturePro(
 			*state.texture,
@@ -119,4 +123,14 @@ func initialize() *State {
 		texture:      &tex,
 	}
 	return &state
+}
+
+func write_perlin_to_image(state *State, z int) {
+	for y := range state.image_target.H {
+		for x := range state.image_target.W {
+			val := state.noises.perlin_values.get(x, y, z)
+			px := pixel_from_fvec3(Vec3Fill(val))
+			state.image_target.Pixels[y*state.image_target.W+x] = px
+		}
+	}
 }

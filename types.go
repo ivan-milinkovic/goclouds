@@ -41,3 +41,11 @@ const (
 	ShadingType_NaiveLight      ShadingType = 1
 	ShadingType_RayMarchedLight ShadingType = 2
 )
+
+type DensityType = int
+
+const (
+	DensityType_PerlinRuntime = 1
+	DensityType_PerlinPreCalc = 2
+	DensityType_Uniform       = 3
+)
