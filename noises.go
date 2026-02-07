@@ -24,14 +24,30 @@ func NewNoises() *Noises {
 	var perlin_pre_gen = perlin.NewPerlin(1.0, 2, 1, 1234) // contrast, zoom, iterations (details), seed
 	dim := 64
 	w, h, d := dim, dim, dim
+	perlin_scale := 8.0
 	perlin_values := NewMatrix3D[float64](w, h, d)
+	// easing_treshold := 0.2
 	for y := range h {
 		for x := range w {
 			for z := range d {
-				fx := float64(x) / float64(w) * 4.0
-				fy := float64(y) / float64(h) * 4.0
-				fz := float64(z) / float64(d) * 4.0
-				val := clamp01(perlin_pre_gen.Noise3D(fx, fy, fz))
+
+				xf := float64(x) / float64(w)
+				yf := float64(y) / float64(h)
+				zf := float64(z) / float64(d)
+
+				xv := xf * perlin_scale
+				yv := yf * perlin_scale
+				zv := zf * perlin_scale
+
+				val := clamp01(perlin_pre_gen.Noise3D(xv, yv, zv))
+
+				// apply fade-out towards edges to fake tiling
+				xs := circular_out(xf)
+				ys := circular_out(yf)
+				zs := circular_out(zf)
+				fade := min(min(xs, ys), zs)
+				val *= fade
+
 				perlin_values.set(val, x, y, z)
 			}
 		}
@@ -67,10 +83,6 @@ func Vec3Fract(v Vec3) Vec3 {
 
 func hash(n float64) float64 {
 	return math.Mod(math.Sin(n)*43758.5453, 1)
-}
-
-func mix(a, b, f float64) float64 {
-	return a*(1-f) + b*f
 }
 
 func noise(x Vec3) float64 {

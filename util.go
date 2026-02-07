@@ -90,3 +90,8 @@ func beers_law(distance, absorption float64) float64 {
 func ease_in(x float64) float64 {
 	return clamp01(x * x * x)
 }
+
+func circular_out(x float64) float64 {
+	// desmos code: y\ =\ 2\cdot\sqrt{(1.0-x)*x}
+	return 2 * math.Sqrt((1-x)*x)
+}
