@@ -18,4 +18,7 @@ const EASE_IN_INSIDE_VOLUMES = true
 var cloud_color = Vec3{0.95, 0.95, 0.95}
 var density_type = DensityType_PerlinPreCalc // updated by key shortcuts 1,2,3
 
+const RENDER_LIGHT_SOURCE = false
+const ANIMATE_LIGHT_POSITION = false
+
 const PREVIEW_PERLIN = false

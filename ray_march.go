@@ -41,8 +41,13 @@ func ray_march(render_params *RenderParameters) {
 			for y := y_mark; y < end; y++ {
 				for x := range img.W {
 					ray := camera.MakeRay(x, y, img.W, img.H)
-					// colorf := march_solid(&ray, render_params)
 					colorf := march_volume(&ray, render_params)
+					if RENDER_LIGHT_SOURCE {
+						color_light_source := march_light(&ray, render_params)
+						colorf = colorf.Add(color_light_source)
+					}
+					// color_solids := march_solid(&ray, render_params)
+					// colorf = colorf.Add(color_solids)
 
 					p := pixel_from_fvec4(colorf)
 					img.Pixels[y*img.W+x] = p
@@ -85,6 +90,29 @@ func march_solid(starting_ray *Ray, render_params *RenderParameters) Vec4 {
 		}
 		count++
 	}
+}
+
+func march_light(starting_ray *Ray, render_params *RenderParameters) Vec4 {
+	ray := *starting_ray
+	light := render_params.light
+	count := 0
+	for {
+		ray_origin_in_sphere_space := ray.origin.Sub(light.origin)
+		sdf := sdfSphere(ray_origin_in_sphere_space, 0.1)
+		if sdf < 0.02 {
+			return Vec4Fill(1)
+		}
+
+		// advance ray
+		dv := ray.dir.Scale(sdf)
+		ray.origin = ray.origin.Add(dv)
+
+		if sdf >= 10 || count >= 10 {
+			break
+		}
+		count++
+	}
+	return Vec4Fill(0.0)
 }
 
 func march_volume(starting_ray *Ray, render_params *RenderParameters) Vec4 {

@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"image/color"
+	"math"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -46,8 +47,10 @@ func main() {
 			density_type = DensityType_Uniform
 		}
 
-		// state.light.origin.X = 4 * math.Sin(time*0.8)
-		// state.light.origin = VRotate(&state.light.origin, &Vec3{0, 1, 0}, 0.1)
+		if ANIMATE_LIGHT_POSITION {
+			state.light.origin.X = 2 * math.Sin(time*0.4)
+			// state.light.origin = VRotate(&state.light.origin, &Vec3{0, 1, 0}, 0.1)
+		}
 
 		// Render
 		if PREVIEW_PERLIN {
@@ -105,7 +108,7 @@ func initialize() *State {
 	noises := NewNoises()
 
 	light := Light{
-		origin: Vec3Make(-4, 4, 0),
+		origin: Vec3Make(-2.5, 1.5, 2),
 		dir:    Vec3Make(1, -0.25, 0).Normalized(),
 		color:  Vec3Fill(1.0),
 	}
