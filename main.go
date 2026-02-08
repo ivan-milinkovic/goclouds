@@ -68,6 +68,7 @@ func main() {
 			rl.White,
 		)
 		rl.DrawText(fmt.Sprintf("%v fps, dt: %.0fms", rl.GetFPS(), rl.GetFrameTime()*1000), 10, 10, 16, rl.White)
+		rl.DrawText(fmt.Sprintf("noise: 1/2/3 keys, current: %d", density_type), 10, WINDOW_HEIGHT-20, 16, rl.White)
 		rl.EndDrawing()
 	}
 
