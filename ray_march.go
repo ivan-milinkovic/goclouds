@@ -330,10 +330,11 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 	light_amount := acc_light_amount / count // average
 	diffuse := cloud_color.Scale(light_amount)
 	alpha := 1 - beers_law(acc_distance, acc_density)
-	if EASE_IN_EDGES {
-		// soften edges, if total sdf is small, then density was sampled only near the surface
-		acc_sdf *= 0.2
-		alpha *= ease_in(acc_sdf)
+	if EASE_IN_EDGES { // soften edges
+		if EASE_IN_INSIDE_VOLUMES {
+			alpha *= ease_in(linear_step(0.0, 1.0, acc_density)) // ease-in throughout the volume (not just on the surface)
+		}
+		alpha *= ease_in(linear_step(0.0, 3.0, acc_sdf)) // soften object outline; 3 by experimentation
 	}
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }

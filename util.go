@@ -99,3 +99,7 @@ func circular_out(x float64) float64 {
 	// desmos code: y\ =\ 2\cdot\sqrt{(1.0-x)*x}
 	return 2 * math.Sqrt((1-x)*x)
 }
+
+func linear_step(min, max, v float64) float64 {
+	return clamp((v-min)/(max-min), 0.0, 1.0)
+}

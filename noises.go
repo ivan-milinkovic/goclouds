@@ -21,7 +21,7 @@ func NewNoises() *Noises {
 	}
 
 	// does not tile, blocky appearance
-	var perlin_pre_gen = perlin.NewPerlin(1.0, 2, 1, 1234) // contrast, zoom, iterations (details), seed
+	var perlin_pre_gen = perlin.NewPerlin(0.8, 1, 2, 1234) // contrast, zoom, iterations (details), seed
 	dim := 128
 	w, h, d := dim, dim, dim
 	perlin_scale := 8.0

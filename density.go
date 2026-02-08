@@ -67,7 +67,7 @@ func sample_density_pre_calc_perlin_2(point Vec3, noises *Noises, time float64) 
 	}
 	var p2 float64
 	{
-		scale := 1.0
+		scale := 0.8
 		phase := time * 0.08
 		coords := point.Scale(scale).Add(Vec3{phase * 1, phase * 0, phase * 2})
 		coords = coords.Add(Vec3{0.05, 0.1, 0.15}) // avoid tiling edges where it's all zeros
