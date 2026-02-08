@@ -96,6 +96,11 @@ func ease_in(x float64) float64 {
 }
 
 func circular_out(x float64) float64 {
+	// desmos code: y\ =\ sqrt{(2.0-x)*x}
+	return math.Sqrt((2.0 - x) * x)
+}
+
+func circular_out_1(x float64) float64 {
 	// desmos code: y\ =\ 2\cdot\sqrt{(1.0-x)*x}
 	return 2 * math.Sqrt((1-x)*x)
 }
