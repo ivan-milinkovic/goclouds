@@ -101,5 +101,18 @@ func circular_out(x float64) float64 {
 }
 
 func linear_step(min, max, v float64) float64 {
-	return clamp((v-min)/(max-min), 0.0, 1.0)
+	return clamp(inverse_lerp(min, max, v), 0.0, 1.0)
+}
+
+func inverse_lerp(min, max, v float64) float64 {
+	return (v - min) / (max - min)
+}
+
+func smooth_step(x float64) float64 {
+	return x * x * (3.0 - 2.0*x)
+}
+
+func remap(v, inMin, inMax, outMin, outMax float64) float64 {
+	t := inverse_lerp(inMin, inMax, v)
+	return mix(outMin, outMax, t)
 }
