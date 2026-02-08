@@ -46,7 +46,7 @@ func main() {
 			density_type = DensityType_Uniform
 		}
 
-		// state.light.origin.X = 2 * math.Sin(time*0.5)
+		// state.light.origin.X = 4 * math.Sin(time*0.8)
 		// state.light.origin = VRotate(&state.light.origin, &Vec3{0, 1, 0}, 0.1)
 
 		// Render
@@ -91,7 +91,7 @@ func initialize() *State {
 	img := ImageFromRGBA(image_target.Pixels, &img_bytes, VOL_VIEWPORT_W, VOL_VIEWPORT_H)
 	tex := rl.LoadTextureFromImage(img)
 
-	// right-handed coordinate system
+	// left-handed coordinate system
 	near_plane_d := 1.0
 	camera_origin := Vec3{0, 0, 0}
 	camera := Camera{
