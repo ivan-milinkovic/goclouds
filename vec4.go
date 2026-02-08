@@ -8,6 +8,10 @@ func Vec4Fill(v float64) Vec4 {
 	return Vec4{X: v, Y: v, Z: v, W: v}
 }
 
+func Vec4Make(v Vec3, w float64) Vec4 {
+	return Vec4{X: v.X, Y: v.Y, Z: v.Z, W: w}
+}
+
 func (v Vec4) Scale(s float64) Vec4 {
 	return Vec4{
 		X: v.X * s,

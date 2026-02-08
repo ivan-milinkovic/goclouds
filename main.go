@@ -109,7 +109,7 @@ func initialize() *State {
 
 	light := Light{
 		origin: Vec3Make(-2.5, 1.5, 2),
-		color:  Vec3Fill(1.0),
+		color:  Vec3{1.0, 1.0, 1.0},
 	}
 
 	sphere := Sphere{

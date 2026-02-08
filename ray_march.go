@@ -100,7 +100,7 @@ func march_light(starting_ray *Ray, render_params *RenderParameters) Vec4 {
 		ray_origin_in_sphere_space := ray.origin.Sub(light.origin)
 		sdf := sdfSphere(ray_origin_in_sphere_space, 0.1)
 		if sdf < 0.02 {
-			return Vec4Fill(1)
+			return Vec4Make(light.color, 1)
 		}
 
 		// advance ray
@@ -266,6 +266,7 @@ func march_through_volume_naive_light(ray *Ray, render_params *RenderParameters)
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 
+// accumulating color
 func march_through_volume_raymarched_light_1(ray *Ray, render_params *RenderParameters) Vec4 {
 	sphere := render_params.sphere
 	light := render_params.light
@@ -313,6 +314,7 @@ func march_through_volume_raymarched_light_1(ray *Ray, render_params *RenderPara
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 
+// accumulating light intensity
 func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderParameters) Vec4 {
 	sphere := render_params.sphere
 	light := render_params.light
@@ -356,7 +358,8 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		count += 1.0
 	}
 	light_amount := acc_light_amount / count // average
-	diffuse := cloud_color.Scale(light_amount)
+	light_color := light.color.Scale(light_amount)
+	diffuse := cloud_color.Mul(light_color)
 	alpha := 1 - beers_law(acc_distance, acc_density)
 	if EASE_IN_EDGES { // soften edges
 		if EASE_IN_INSIDE_VOLUMES {
