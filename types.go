@@ -30,7 +30,6 @@ type Sphere struct {
 
 type Light struct { // point light
 	origin Vec3
-	dir    Vec3
 	color  Vec3
 }
 

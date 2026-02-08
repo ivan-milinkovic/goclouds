@@ -109,7 +109,6 @@ func initialize() *State {
 
 	light := Light{
 		origin: Vec3Make(-2.5, 1.5, 2),
-		dir:    Vec3Make(1, -0.25, 0).Normalized(),
 		color:  Vec3Fill(1.0),
 	}
 

@@ -36,7 +36,6 @@ func BenchmarkProf(b *testing.B) {
 
 	light := Light{
 		origin: Vec3Make(-1, 1, 0),
-		dir:    Vec3Make(1, -0.25, 0).Normalized(),
 		color:  Vec3Fill(1.0),
 	}
 
