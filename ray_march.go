@@ -349,6 +349,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, render_params.noises, render_params.time)
 		light_amount := beers_law(distance_sampled_to_light, density_to_light) // light transmittance from light to point
 		// light_amount *= beers_law(acc_distance, acc_density) // light transmittance from point to camera
+		// light_amount += MultipleOctaveScattering(density, 0.8)
 		acc_light_amount += light_amount
 
 		// advance ray inside volume

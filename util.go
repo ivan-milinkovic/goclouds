@@ -121,3 +121,34 @@ func remap(v, inMin, inMax, outMin, outMax float64) float64 {
 	t := inverse_lerp(inMin, inMax, v)
 	return mix(outMin, outMax, t)
 }
+
+// https://github.com/simondevyoutube/Shaders_Clouds1/blob/main/shaders/fragment-shader.glsl#L99
+func MultipleOctaveScattering(density, mu float64) float64 {
+	attenuation := 0.2
+	contribution := 0.2
+	phaseAttenuation := 0.5
+
+	a := 1.0
+	b := 1.0
+	c := 1.0
+	scatteringOctaves := 4.0
+
+	luminance := 0.0
+
+	for i := 0.0; i < scatteringOctaves; i++ {
+		phaseFunction := HenyeyGreenstein(0.3*c, mu)
+		beer := math.Exp(-density * 0.8 * a)
+
+		luminance += b * phaseFunction * beer
+
+		a *= attenuation
+		b *= contribution
+		c *= (1.0 - phaseAttenuation)
+	}
+	return luminance
+}
+
+func HenyeyGreenstein(g, mu float64) float64 {
+	gg := g * g
+	return (1.0 / (4.0 * math.Pi)) * ((1.0 - gg) / math.Pow(1.0+gg-2.0*g*mu, 1.5))
+}
