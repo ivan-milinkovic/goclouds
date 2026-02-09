@@ -94,7 +94,9 @@ func perlin_tiled(x, y, z float64, perlin_generator *perlin.Perlin) float64 {
 }
 
 /*
-// https://www.shadertoy.com/view/WdXGRj?__cf_chl_tk=9luEUdOzm.bxXjKfn8FkQQsZhrXf1A1g1eark8FC7YU-1770320491-1.0.1.1-rpvaq3.HnaxLY0F0kDek8EIrPjd.LC4KhjupDAtPrnA
+// extremely slow
+
+// https://www.shadertoy.com/view/WdXGRj
 
 func Vec3Floor(v Vec3) Vec3 {
 	return Vec3{
@@ -113,7 +115,10 @@ func Vec3Fract(v Vec3) Vec3 {
 }
 
 func hash(n float64) float64 {
-	return math.Mod(math.Sin(n)*43758.5453, 1)
+	// return math.Mod(math.Sin(n)*43758.5453, 1)
+	h := math.Sin(n) * 43758.5453
+	hf := math.Floor(h)
+	return h - hf
 }
 
 func noise(x Vec3) float64 {
