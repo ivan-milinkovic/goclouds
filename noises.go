@@ -1,14 +1,17 @@
 package main
 
 import (
+	"math"
+
 	"github.com/aquilax/go-perlin"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type Noises struct {
-	tex_values    *Matrix2D[float64]
-	perlin_values *Matrix3D[float64]
-	perlin_gen    *perlin.Perlin
+	tex_values          *Matrix2D[float64]
+	perlin_values       *Matrix3D[float64]
+	perlin_values_tiled *Matrix3D[float64]
+	perlin_gen          *perlin.Perlin
 }
 
 func NewNoises() *Noises {
@@ -53,13 +56,41 @@ func NewNoises() *Noises {
 		}
 	}
 
+	// doesn't look good
+	perlin_values_tiled := NewMatrix3D[float64](w, h, d)
+	for y := range h {
+		for x := range w {
+			for z := range d {
+				xf := float64(x) / float64(w)
+				yf := float64(y) / float64(h)
+				zf := float64(z) / float64(d)
+				val := perlin_tiled(xf, yf, zf, perlin_pre_gen)
+				perlin_values_tiled.set(val, x, y, z)
+			}
+		}
+	}
+
 	var perlin_gen = perlin.NewPerlin(0.2, 1.0, 1, 1234) // contrast, zoom, iterations (details), seed
 
 	return &Noises{
-		tex_values:    noise_values,
-		perlin_values: perlin_values,
-		perlin_gen:    perlin_gen,
+		tex_values:          noise_values,
+		perlin_values:       perlin_values,
+		perlin_values_tiled: perlin_values_tiled,
+		perlin_gen:          perlin_gen,
 	}
+}
+
+// https://gamedev.stackexchange.com/a/23679
+func perlin_tiled(x, y, z float64, perlin_generator *perlin.Perlin) float64 {
+	// x, y, z must be between 0 and 1
+	c := 2.0
+	a := 1.0 // torus parameters (controlling size)
+	xt := (c + a*math.Cos(2*math.Pi*y)) * math.Cos(2*math.Pi*x)
+	yt := (c + a*math.Cos(2*math.Pi*y)) * math.Sin(2*math.Pi*x)
+	zt := a * math.Sin(2*math.Pi*z)
+	val := perlin_generator.Noise3D(xt, yt, zt) // torus
+
+	return val
 }
 
 /*
