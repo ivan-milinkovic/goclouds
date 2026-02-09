@@ -19,6 +19,8 @@ https://www.youtube.com/watch?v=Qj_tK_mdRcA
 
 https://github.com/simondevyoutube/Shaders_Clouds1/
 
+Download course notes: https://www.ea.com/frostbite/news/physically-based-sky-atmosphere-and-cloud-rendering
+
 https://iquilezles.org/articles/smoothsteps/
 
 https://blog.maximeheckel.com/posts/real-time-cloudscapes-with-volumetric-raymarching/
