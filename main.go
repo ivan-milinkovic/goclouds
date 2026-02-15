@@ -97,7 +97,7 @@ func initialize() *State {
 
 	// left-handed coordinate system
 	near_plane_d := 1.0
-	camera_origin := Vec3{0, 0, 0}
+	camera_origin := Vec3{0, 0, -2}
 	camera := Camera{
 		origin: camera_origin,
 		p00:    Vec3{0, 0, camera_origin.Z + near_plane_d},
@@ -108,13 +108,13 @@ func initialize() *State {
 	noises := NewNoises()
 
 	light := Light{
-		origin: Vec3Make(-2.5, 1.5, 2),
+		origin: Vec3Make(-4.0, 3.5, 2),
 		color:  Vec3{1.0, 1.0, 1.0},
 	}
 
 	sphere := Sphere{
 		C: Vec3{0, 0, 2},
-		R: 1,
+		R: 2,
 	}
 
 	state := State{
