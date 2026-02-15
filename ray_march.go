@@ -365,9 +365,11 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 
 		count += 1.0
 	}
+
 	light_amount := acc_light_amount * 0.16
 	light_color := light.color.Scale(light_amount)
 	diffuse := cloud_color.Mul(light_color)
+
 	alpha := 1 - beers_law(acc_distance, acc_density)
 	if EASE_IN_EDGES { // soften edges
 		if EASE_IN_INSIDE_VOLUMES {
@@ -377,6 +379,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		// alpha *= ease_in(clamp01(acc_sdf / count))
 		alpha *= ease_in(remap(acc_sdf/count, 0, 0.5, 0, 1))
 	}
+
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
 

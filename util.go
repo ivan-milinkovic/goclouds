@@ -47,6 +47,15 @@ func pixel_from_float4(fcol [4]float64) Pixel {
 	return p
 }
 
+func vec3_from_pixel(p Pixel) Vec3 {
+	v := Vec3{
+		X: float64(p.R) / 255.0,
+		Y: float64(p.G) / 255.0,
+		Z: float64(p.B) / 255.0,
+	}
+	return v
+}
+
 func byte_color_value_from_float(f float64) byte {
 	f_clamped := clamp01(f)
 	vb := byte(f_clamped * 255)
