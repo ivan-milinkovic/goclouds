@@ -54,7 +54,7 @@ func byte_color_value_from_float(f float64) byte {
 }
 
 func clamp(val, minv, maxv float64) float64 {
-	return max(min(val, maxv), minv)
+	return min(max(minv, val), maxv)
 }
 
 func clamp01(val float64) float64 {

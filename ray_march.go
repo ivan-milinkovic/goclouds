@@ -344,12 +344,12 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		}
 		acc_sdf += math.Abs(sdf)
 
-		density := sample_density(ray.origin, render_params.noises, render_params.time) //* volume_resolution
+		density := sample_density(ray.origin.Scale(1/render_params.sphere.R), render_params.noises, render_params.time) //* volume_resolution
 		acc_density += density
 
 		distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, render_params.noises, render_params.time)
 		light_amount := beers_law(distance_sampled_to_light, density_to_light) // light transmittance from light to point
-		// light_amount *= beers_law(acc_distance, acc_density) // light transmittance from point to camera
+		light_amount *= beers_law(acc_distance, acc_density)                   // light transmittance from point to camera
 		// light_amount += MultipleOctaveScattering(density, 0.8)
 		acc_light_amount += light_amount
 
@@ -360,7 +360,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 
 		count += 1.0
 	}
-	light_amount := acc_light_amount / count // average
+	light_amount := acc_light_amount * 0.2
 	light_color := light.color.Scale(light_amount)
 	diffuse := cloud_color.Mul(light_color)
 	alpha := 1 - beers_law(acc_distance, acc_density)
@@ -368,7 +368,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		if EASE_IN_INSIDE_VOLUMES {
 			alpha *= ease_in(linear_step(0.0, 1.0, acc_density)) // ease-in throughout the volume (not just on the surface)
 		}
-		alpha *= ease_in(linear_step(0.0, 3.0, acc_sdf)) // soften object outline; 3 by experimentation
+		alpha *= ease_in(linear_step(0.0, 6.0, acc_sdf)) // soften object outline; 3 by experimentation
 	}
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
@@ -385,6 +385,7 @@ func march_through_volume_to_light(
 	point_s := point.Sub(sphere.C)               // point in sphere space
 	dir_to_light := light_origin_s.Sub(point_s).Normalized()
 
+	acc_sdf := 0.0
 	acc_distance := 0.0
 	acc_density := 0.0
 
@@ -402,12 +403,18 @@ func march_through_volume_to_light(
 			break               // went outside the volume
 		}
 
-		acc_density += sample_density(point, noises, time) //* volume_resolution
+		acc_sdf += math.Abs(sdf)
+		acc_density += sample_density(point, noises, time)
 
 		// advance point towards light
 		dv := dir_to_light.Scale(ds)
 		point_s = point_s.Add(dv)
 		acc_distance += VOLUME_RESOLUTION
 	}
+
+	if EASE_IN_EDGES {
+		acc_density *= ease_in(linear_step(0.0, 1.0, acc_sdf)) // soften towards surface
+	}
+
 	return acc_distance, acc_density
 }
