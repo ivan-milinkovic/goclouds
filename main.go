@@ -26,6 +26,7 @@ func main() {
 
 	// clear_color := rl.Black
 	clear_color := color.RGBA{5, 10, 30, 255}
+	// clear_color := color.RGBA{115, 154, 189, 255}
 	perlin_preview_z := 10
 
 	// rl.SetTargetFPS(60)

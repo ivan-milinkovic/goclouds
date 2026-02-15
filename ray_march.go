@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"math/rand/v2"
 	"runtime"
 	"sync"
 )
@@ -354,13 +355,17 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		acc_light_amount += light_amount
 
 		// advance ray inside volume
-		dv := ray.dir.Scale(ds)
+		rnd := 0.0
+		if RANDOMIZE_SAMPLING {
+			rnd = rand.Float64() * 0.08
+		}
+		dv := ray.dir.Scale(ds + rnd)
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
 
 		count += 1.0
 	}
-	light_amount := acc_light_amount * 0.2
+	light_amount := acc_light_amount * 0.16
 	light_color := light.color.Scale(light_amount)
 	diffuse := cloud_color.Mul(light_color)
 	alpha := 1 - beers_law(acc_distance, acc_density)
@@ -368,7 +373,9 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		if EASE_IN_INSIDE_VOLUMES {
 			alpha *= ease_in(linear_step(0.0, 1.0, acc_density)) // ease-in throughout the volume (not just on the surface)
 		}
-		alpha *= ease_in(linear_step(0.0, 6.0, acc_sdf)) // soften object outline; 3 by experimentation
+		// alpha *= ease_in(linear_step(0.0, 6.0, acc_sdf)) // soften object outline; set by experimentation
+		// alpha *= ease_in(clamp01(acc_sdf / count))
+		alpha *= clamp01(ease_in(remap(acc_sdf/count, 0, 0.5, 0, 1)))
 	}
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
@@ -404,7 +411,7 @@ func march_through_volume_to_light(
 		}
 
 		acc_sdf += math.Abs(sdf)
-		acc_density += sample_density(point, noises, time)
+		acc_density += sample_density(point.Scale(1/sphere.R), noises, time)
 
 		// advance point towards light
 		dv := dir_to_light.Scale(ds)
