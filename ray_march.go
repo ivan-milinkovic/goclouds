@@ -144,7 +144,8 @@ func march_outside_volume(ray *Ray, render_params *RenderParameters, jump_count 
 		sdf := sdfSphere(ray_origin_in_sphere_space, sphere.R)
 
 		if sdf <= 0 {
-			return true // found a volume
+			ray.origin = ray.origin.Add(ray.dir.Scale(sdf)) // move back to the beginning of the volume
+			return true                                     // found a volume
 		}
 
 		// break out if moving away from near objects (won't work if there are both near and far objects)
