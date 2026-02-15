@@ -375,7 +375,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		}
 		// alpha *= ease_in(linear_step(0.0, 6.0, acc_sdf)) // soften object outline; set by experimentation
 		// alpha *= ease_in(clamp01(acc_sdf / count))
-		alpha *= clamp01(ease_in(remap(acc_sdf/count, 0, 0.5, 0, 1)))
+		alpha *= ease_in(remap(acc_sdf/count, 0, 0.5, 0, 1))
 	}
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
