@@ -1,8 +1,16 @@
 # goclouds
 
+Ray-marching and cloud rendering in Go language.
+
 Tune values in `config.go`
 
+# Build
+
+On macOS, works as-is.
+
 On Windows, download raylib.dll and put it in the repo root.
+
+For other platforms, see: https://github.com/gen2brain/raylib-go
 
 # Libs
 
