@@ -407,11 +407,11 @@ func march_through_volume_to_light(
 	acc_distance := 0.0
 	acc_mass := 0.0
 
-	var ds float64
+	var res_step float64
 	if SCALE_STEP_RES_TO_OBJECT {
-		ds = sphere.R / NUM_STEPS_OBJECT_SCALING
+		res_step = sphere.R / NUM_STEPS_OBJECT_SCALING
 	} else {
-		ds = VOLUME_RESOLUTION
+		res_step = VOLUME_RESOLUTION
 	}
 
 	for {
@@ -421,11 +421,12 @@ func march_through_volume_to_light(
 			break               // went outside the volume
 		}
 		abs_sdf := math.Abs(sdf)
+		ds := min(abs_sdf, res_step)
 		acc_sdf += abs_sdf
 		acc_mass += sample_density(point.Scale(1/sphere.R), noises, time) * ds
 
 		// advance point towards light
-		dv := dir_to_light.Scale(ds)
+		dv := dir_to_light.Scale(res_step)
 		point_s = point_s.Add(dv)
 		acc_distance += VOLUME_RESOLUTION
 	}
