@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"math/rand/v2"
 	"runtime"
 	"sync"
 )
@@ -321,17 +320,17 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 	sphere := render_params.sphere
 	light := render_params.light
 
-	acc_density := 0.0
+	acc_mass := 0.0
 	acc_distance := 0.0 // accumulated distance inside the volume
 	acc_light_amount := 0.0
 	acc_sdf := 0.0
 	count := 0.0
 
-	var ds float64
+	var res_step float64
 	if SCALE_STEP_RES_TO_OBJECT {
-		ds = sphere.R / NUM_STEPS_OBJECT_SCALING
+		res_step = sphere.R / NUM_STEPS_OBJECT_SCALING
 	} else {
-		ds = VOLUME_RESOLUTION
+		res_step = VOLUME_RESOLUTION
 	}
 
 	// when orientations are introduced, the normals will have to be transformed
@@ -341,23 +340,26 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		point_in_sphere_space := ray.origin.Sub(sphere.C)
 		sdf := sdfSphere(point_in_sphere_space, sphere.R)
 		if sdf > 0 {
+			// acc_distance -= sdf
 			break // went outside the volume
 		}
+		ds := min(math.Abs(sdf), res_step)
 		acc_sdf += math.Abs(sdf)
 
-		density := sample_density(ray.origin.Scale(1/render_params.sphere.R), render_params.noises, render_params.time) //* volume_resolution
-		acc_density += density
+		mass := sample_density(ray.origin.Scale(1/render_params.sphere.R), render_params.noises, render_params.time) * ds
+		acc_mass += mass
 
-		distance_sampled_to_light, density_to_light := march_through_volume_to_light(ray.origin, sphere, light, render_params.noises, render_params.time)
-		light_amount := beers_law(distance_sampled_to_light, density_to_light) // light transmittance from light to point
-		light_amount *= beers_law(acc_distance, acc_density)                   // light transmittance from point to camera
+		distance_sampled_to_light, mass_to_light := march_through_volume_to_light(ray.origin, sphere, light, render_params.noises, render_params.time)
+		light_amount := beers_law(distance_sampled_to_light, mass_to_light) // light transmittance from light to point
+		light_amount *= beers_law(acc_distance, acc_mass)                   // light transmittance from point to camera
 		// light_amount += MultipleOctaveScattering(density, 0.8)
 		acc_light_amount += light_amount
 
 		// advance ray inside volume
 		rnd := 0.0
 		if RANDOMIZE_SAMPLING {
-			rnd = rand.Float64() * 0.08
+			// rnd = rand.Float64() * 0.08
+			rnd = ((hash(ray.origin.X) + hash(ray.origin.Y)) * 0.5) * 0.06
 		}
 		dv := ray.dir.Scale(ds + rnd)
 		ray.origin = ray.origin.Add(dv)
@@ -370,15 +372,21 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 	light_color := light.color.Scale(light_amount)
 	diffuse := cloud_color.Mul(light_color)
 
-	alpha := 1 - beers_law(acc_distance, acc_density)
+	alpha := 1 - beers_law(acc_distance, acc_mass)
 	if EASE_IN_EDGES { // soften edges
 		if EASE_IN_INSIDE_VOLUMES {
-			alpha *= ease_in(linear_step(0.0, 1.0, acc_density)) // ease-in throughout the volume (not just on the surface)
+			// alpha *= ease_in(linear_step(0.0, 1.0, acc_mass)) // ease-in throughout the volume (not just on the surface)
+			alpha *= ease_in(remap(acc_mass, 0, 1, 0, 1))
 		}
-		// alpha *= ease_in(linear_step(0.0, 6.0, acc_sdf)) // soften object outline; set by experimentation
+		alpha *= ease_in(linear_step(0.0, 6.0, acc_sdf)) // soften object outline; set by experimentation
 		// alpha *= ease_in(clamp01(acc_sdf / count))
-		alpha *= ease_in(remap(acc_sdf/count, 0, 0.5, 0, 1))
+		// alpha *= ease_in(clamp01(remap(acc_sdf/count, 0, 0.4, 0, 1)))
+		// alpha *= ease_in(remap(acc_mass, 0, 1, 0, 1))
+		// alpha = alpha * alpha
 	}
+
+	// col := light_color.Scale(1 - alpha).Add(cloud_color.Scale(alpha))
+	// return Vec4{col.X, col.Y, col.Z, alpha}
 
 	return Vec4{diffuse.X, diffuse.Y, diffuse.Z, alpha}
 }
@@ -389,7 +397,7 @@ func march_through_volume_to_light(
 	light *Light,
 	noises *Noises,
 	time float64,
-) (distance, density float64) {
+) (distance, mass float64) {
 	// As long as there are only translations, directions are OK in any translated space (not rotated or scaled)
 	light_origin_s := light.origin.Sub(sphere.C) // light origin in sphere space
 	point_s := point.Sub(sphere.C)               // point in sphere space
@@ -397,7 +405,7 @@ func march_through_volume_to_light(
 
 	acc_sdf := 0.0
 	acc_distance := 0.0
-	acc_density := 0.0
+	acc_mass := 0.0
 
 	var ds float64
 	if SCALE_STEP_RES_TO_OBJECT {
@@ -412,9 +420,9 @@ func march_through_volume_to_light(
 			acc_distance -= sdf // decrease by the over-shot distance outside the volume
 			break               // went outside the volume
 		}
-
-		acc_sdf += math.Abs(sdf)
-		acc_density += sample_density(point.Scale(1/sphere.R), noises, time)
+		abs_sdf := math.Abs(sdf)
+		acc_sdf += abs_sdf
+		acc_mass += sample_density(point.Scale(1/sphere.R), noises, time) * ds
 
 		// advance point towards light
 		dv := dir_to_light.Scale(ds)
@@ -422,9 +430,9 @@ func march_through_volume_to_light(
 		acc_distance += VOLUME_RESOLUTION
 	}
 
-	if EASE_IN_EDGES {
-		acc_density *= ease_in(linear_step(0.0, 1.0, acc_sdf)) // soften towards surface
-	}
+	// if EASE_IN_EDGES {
+	// 	acc_mass *= ease_in(linear_step(0.0, 1.0, acc_sdf)) // soften towards surface
+	// }
 
-	return acc_distance, acc_density
+	return acc_distance, acc_mass
 }

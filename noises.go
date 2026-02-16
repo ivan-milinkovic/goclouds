@@ -93,6 +93,14 @@ func perlin_tiled(x, y, z float64, perlin_generator *perlin.Perlin) float64 {
 	return val
 }
 
+// https://www.shadertoy.com/view/WdXGRj
+func hash(n float64) float64 {
+	// return math.Mod(math.Sin(n)*43758.5453, 1)
+	h := math.Sin(n) * 43758.5453
+	hf := math.Floor(h)
+	return h - hf
+}
+
 /*
 // extremely slow
 

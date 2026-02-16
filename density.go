@@ -3,7 +3,7 @@ package main
 import "math"
 
 func sample_density(point Vec3, noises *Noises, time float64) (density_res float64) {
-	// defer func() { density_res *= 0.2 }()
+	defer func() { density_res *= 4 }()
 	switch density_type {
 	case DensityType_PerlinPreCalc:
 		return sample_density_pre_calc_perlin_2(point, noises, time)
@@ -12,7 +12,7 @@ func sample_density(point Vec3, noises *Noises, time float64) (density_res float
 	case DensityType_PerlinRuntime:
 		return sample_density_runtime_perlin(point, noises, time)
 	default:
-		return 0.05
+		return 0.1
 	}
 }
 

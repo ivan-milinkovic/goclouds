@@ -101,7 +101,7 @@ func beers_law(distance, absorption float64) float64 {
 }
 
 func ease_in(x float64) float64 {
-	return clamp01(x * x * x)
+	return clamp01(x * x)
 }
 
 func circular_out(x float64) float64 {
@@ -115,7 +115,7 @@ func circular_out_1(x float64) float64 {
 }
 
 func linear_step(min, max, v float64) float64 {
-	return clamp(inverse_lerp(min, max, v), 0.0, 1.0)
+	return clamp01(inverse_lerp(min, max, v))
 }
 
 func inverse_lerp(min, max, v float64) float64 {
