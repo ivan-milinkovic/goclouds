@@ -340,8 +340,8 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		point_in_sphere_space := ray.origin.Sub(sphere.C)
 		sdf := sdfSphere(point_in_sphere_space, sphere.R)
 		if sdf > 0 {
-			// acc_distance -= sdf
-			break // went outside the volume
+			acc_distance -= sdf // adjust for over-shooting beyond the volume
+			break               // went outside the volume
 		}
 		ds := min(math.Abs(sdf), res_step)
 		acc_sdf += math.Abs(sdf)
@@ -378,11 +378,10 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 			// alpha *= ease_in(linear_step(0.0, 1.0, acc_mass)) // ease-in throughout the volume (not just on the surface)
 			alpha *= ease_in(remap(acc_mass, 0, 1, 0, 1))
 		}
-		alpha *= ease_in(linear_step(0.0, 6.0, acc_sdf)) // soften object outline; set by experimentation
-		// alpha *= ease_in(clamp01(acc_sdf / count))
-		// alpha *= ease_in(clamp01(remap(acc_sdf/count, 0, 0.4, 0, 1)))
-		// alpha *= ease_in(remap(acc_mass, 0, 1, 0, 1))
-		// alpha = alpha * alpha
+		// alpha *= ease_in(linear_step(0.0, 6.0, acc_sdf)) // soften object outline; set by experimentation
+		avg_sdf := acc_sdf / count
+		alpha *= ease_in(clamp01(remap(avg_sdf/sphere.R, 0, 0.2, 0, 1))) // distance of given fraction of R is faded out
+		alpha = alpha * alpha
 	}
 
 	// col := light_color.Scale(1 - alpha).Add(cloud_color.Scale(alpha))
