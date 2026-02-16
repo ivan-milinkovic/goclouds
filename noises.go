@@ -18,7 +18,7 @@ func NewNoises() *Noises {
 	noise_img := rl.LoadImage("tex/cells.png")
 	// noise_img := rl.LoadImage("tex/perlin 10 - 256x256.png")
 	noise_pixels := rl.LoadImageColors(noise_img)
-	noise_values := NewDataMatrix[float64](int(noise_img.Width), int(noise_img.Height))
+	noise_values := NewMatrix2D[float64](int(noise_img.Width), int(noise_img.Height))
 	for i := range noise_img.Width * noise_img.Height {
 		noise_values.values[i] = float64(noise_pixels[i].R) / 255.0
 	}
@@ -93,18 +93,15 @@ func perlin_tiled(x, y, z float64, perlin_generator *perlin.Perlin) float64 {
 	return val
 }
 
-// https://www.shadertoy.com/view/WdXGRj
-func hash(n float64) float64 {
-	// return math.Mod(math.Sin(n)*43758.5453, 1)
-	h := math.Sin(n) * 43758.5453
-	hf := math.Floor(h)
-	return h - hf
-}
-
-/*
 // extremely slow
 
 // https://www.shadertoy.com/view/WdXGRj
+
+var m = Mat3{
+	M: [9]float64{0.00, 0.80, 0.60,
+		-0.80, 0.36, -0.48,
+		-0.60, -0.48, 0.64},
+}
 
 func Vec3Floor(v Vec3) Vec3 {
 	return Vec3{
@@ -147,12 +144,11 @@ func noise(x Vec3) float64 {
 func fbm(p Vec3) float64 {
 	var f float64
 	f = 0.5000 * noise(p)
-	// p = m * p * 2.02
+	p = m.Mult(p).Scale(2.02)
 	f += 0.2500 * noise(p)
-	// p = m * p * 2.03
+	p = m.Mult(p).Scale(2.03)
 	f += 0.12500 * noise(p)
-	// p = m * p * 2.01
+	p = m.Mult(p).Scale(2.01)
 	f += 0.06250 * noise(p)
 	return f
 }
-*/

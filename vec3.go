@@ -62,7 +62,7 @@ func (v Vec3) Mul(v2 Vec3) Vec3 {
 }
 
 func (v *Vec3) Dot(v2 Vec3) float64 {
-	return (*v).X*v2.X + (*v).Y*v2.Y + (*v).Z*v2.Z
+	return v.X*v2.X + v.Y*v2.Y + v.Z*v2.Z
 }
 
 func (v Vec3) Normalized() Vec3 {
@@ -99,4 +99,8 @@ func Vec3Fill(v float64) Vec3 {
 
 func Vec3Make(x, y, z float64) Vec3 {
 	return Vec3{X: x, Y: y, Z: z}
+}
+
+func Vec3FromSlice(s []float64) Vec3 {
+	return Vec3{X: s[0], Y: s[1], Z: s[2]}
 }

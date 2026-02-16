@@ -32,7 +32,7 @@ func BenchmarkProf(b *testing.B) {
 	}
 
 	noises := NewNoises()
-	noises.tex_values = NewDataMatrix[float64](10, 10) // noises.tex_values.W becomes 0 for some reason if run without debugging
+	noises.tex_values = NewMatrix2D[float64](10, 10) // noises.tex_values.W becomes 0 for some reason if run without debugging
 
 	light := Light{
 		origin: Vec3Make(-1, 1, 0),
