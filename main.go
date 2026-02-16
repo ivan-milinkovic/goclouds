@@ -19,7 +19,7 @@ func main() {
 		img:    state.image_target,
 		camera: state.camera,
 		light:  state.light,
-		sphere: state.sphere,
+		geo:    state.geo,
 		noises: state.noises,
 		time:   0.0,
 	}
@@ -109,7 +109,7 @@ func initialize() *State {
 	noises := NewNoises()
 
 	light := Light{
-		origin: Vec3Make(-4.0, 3.5, 2),
+		origin: Vec3Make(-4.0, 3.5, 0),
 		color:  Vec3{1.0, 1.0, 1.0},
 	}
 
@@ -118,11 +118,22 @@ func initialize() *State {
 		R: 2,
 	}
 
+	box := Box{
+		origin: Vec3{0, 0, 0},
+		whd:    Vec3{1, 1, 1},
+	}
+
+	geo := Geometry{
+		sphere: &sphere,
+		box:    &box,
+	}
+
 	state := State{
 		image_target: &image_target,
 		camera:       &camera,
 		light:        &light,
 		sphere:       &sphere,
+		geo:          &geo,
 		noises:       noises,
 		texture:      &tex,
 	}

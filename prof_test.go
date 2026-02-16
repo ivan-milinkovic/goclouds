@@ -44,11 +44,21 @@ func BenchmarkProf(b *testing.B) {
 		R: 1,
 	}
 
+	box := Box{
+		origin: Vec3{0, 0, 0},
+		whd:    Vec3{1, 1, 1},
+	}
+
+	geo := Geometry{
+		sphere: &sphere,
+		box:    &box,
+	}
+
 	render_parameters := RenderParameters{
 		img:    &image_target,
 		camera: &camera,
 		light:  &light,
-		sphere: &sphere,
+		geo:    &geo,
 		noises: noises,
 		time:   0.0,
 	}

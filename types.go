@@ -11,6 +11,7 @@ type State struct {
 	camera       *Camera
 	light        *Light
 	sphere       *Sphere
+	geo          *Geometry
 	noises       *Noises
 	texture      *rl.Texture2D
 }
@@ -23,11 +24,6 @@ type ImageTarget struct {
 	H      int
 }
 
-type Sphere struct {
-	C Vec3
-	R float64
-}
-
 type Light struct { // point light
 	origin Vec3
 	color  Vec3
@@ -37,8 +33,7 @@ type ShadingType = int
 
 const (
 	ShadingType_NoLight         ShadingType = 0
-	ShadingType_NaiveLight      ShadingType = 1
-	ShadingType_RayMarchedLight ShadingType = 2
+	ShadingType_RayMarchedLight ShadingType = 1
 )
 
 type DensityType = int
@@ -53,7 +48,7 @@ type RenderParameters struct {
 	img    *ImageTarget
 	camera *Camera
 	light  *Light
-	sphere *Sphere
+	geo    *Geometry
 	noises *Noises
 	time   float64
 }

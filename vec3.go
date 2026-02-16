@@ -37,6 +37,14 @@ func (v Vec3) AddScalar(s float64) Vec3 {
 	}
 }
 
+func (v Vec3) Max(s float64) Vec3 {
+	return Vec3{
+		X: max(v.X, s),
+		Y: max(v.Y, s),
+		Z: max(v.Z, s),
+	}
+}
+
 func (v Vec3) Add(v2 Vec3) Vec3 {
 	return Vec3{
 		X: v.X + v2.X,
@@ -63,6 +71,13 @@ func (v Vec3) Mul(v2 Vec3) Vec3 {
 
 func (v *Vec3) Dot(v2 Vec3) float64 {
 	return v.X*v2.X + v.Y*v2.Y + v.Z*v2.Z
+}
+
+func (v Vec3) Abs() Vec3 {
+	return Vec3{
+		math.Abs(v.X),
+		math.Abs(v.Y),
+		math.Abs(v.Z)}
 }
 
 func (v Vec3) Normalized() Vec3 {
