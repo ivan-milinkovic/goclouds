@@ -119,8 +119,8 @@ func initialize() *State {
 	}
 
 	box := Box{
-		origin: Vec3{0, 0, 0},
-		whd:    Vec3{1, 1, 1},
+		origin: Vec3{0, 0, 2},
+		whd:    Vec3{2, 2, 2},
 	}
 
 	geo := Geometry{

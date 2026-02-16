@@ -15,6 +15,7 @@ const VOLUME_RESOLUTION = 0.1 // when not scaling
 const RANDOMIZE_SAMPLING = true
 const EASE_IN_EDGES = true
 const EASE_IN_INSIDE_VOLUMES = true
+const USE_BOX_GEOMETRY = false
 
 var cloud_color = Vec3{0.95, 0.95, 0.95}
 var density_type = DensityType_PerlinRuntime // updated by key shortcuts 1,2,3
