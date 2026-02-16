@@ -343,8 +343,10 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 			acc_distance -= sdf // adjust for over-shooting beyond the volume
 			break               // went outside the volume
 		}
-		ds := min(math.Abs(sdf), res_step)
-		acc_sdf += math.Abs(sdf)
+		abs_sdf := math.Abs(sdf)
+		ds := min(abs_sdf, res_step)
+		ds = max(res_step, 0) // must not be zero in order for ray to advance, initial sdf is zero as the ray is positioned precisely
+		acc_sdf += abs_sdf
 
 		mass := sample_density(ray.origin.Scale(1/render_params.sphere.R), render_params.noises, render_params.time) * ds
 		acc_mass += mass
@@ -356,12 +358,12 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 		acc_light_amount += light_amount
 
 		// advance ray inside volume
-		rnd := 0.0
+		rnd_offset := 0.0
 		if RANDOMIZE_SAMPLING {
-			// rnd = rand.Float64() * 0.08
-			rnd = ((hash(ray.origin.X) + hash(ray.origin.Y)) * 0.5) * 0.06
+			// rnd_offset = ((hash(ray.origin.X) + hash(ray.origin.Y)) * 0.5) * 0.06
+			rnd_offset = render_params.noises.perlin_values.getFromFloatsWrap(ray.origin.X, ray.origin.Y, ray.origin.Z) * 0.06
 		}
-		dv := ray.dir.Scale(ds + rnd)
+		dv := ray.dir.Scale(ds + rnd_offset)
 		ray.origin = ray.origin.Add(dv)
 		acc_distance += ds
 
@@ -375,7 +377,7 @@ func march_through_volume_raymarched_light_2(ray *Ray, render_params *RenderPara
 	alpha := 1 - beers_law(acc_distance, acc_mass)
 	if EASE_IN_EDGES { // soften edges
 		if EASE_IN_INSIDE_VOLUMES {
-			// alpha *= ease_in(linear_step(0.0, 1.0, acc_mass)) // ease-in throughout the volume (not just on the surface)
+			// alpha *= ease_in(linear_step(0.0, 1.0, acc_mass))
 			alpha *= ease_in(remap(acc_mass, 0, 1, 0, 1))
 		}
 		// alpha *= ease_in(linear_step(0.0, 6.0, acc_sdf)) // soften object outline; set by experimentation
@@ -421,6 +423,7 @@ func march_through_volume_to_light(
 		}
 		abs_sdf := math.Abs(sdf)
 		ds := min(abs_sdf, res_step)
+		ds = max(res_step, 0) // must not be zero
 		acc_sdf += abs_sdf
 		acc_mass += sample_density(point.Scale(1/sphere.R), noises, time) * ds
 
