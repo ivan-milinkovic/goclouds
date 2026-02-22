@@ -67,6 +67,13 @@ func march_solid(starting_ray *Ray, render_params *RenderParameters) Vec4 {
 	count := 0
 	for {
 		sdf := render_params.geo.Sdf(ray.origin)
+
+		// distort the shape
+		// var x = int(16.0*ray.origin.X + render_params.time*8.0)
+		// var y = int(16.0*ray.origin.Y + render_params.time*8.0)
+		// sdf += render_params.noises.tex_values.getWrap(x, y)
+		// sdf += 1.5 * render_params.noises.perlin_values.getFromVectorWrap(ray.origin.Scale(0.4).AddScalar(0.2*render_params.time))
+
 		if sdf < 0.02 {
 			// v := math.Abs(sdf / (sdf + 1))
 			// return Vec3{X: v, Y: v, Z: v}
@@ -138,6 +145,12 @@ func march_outside_volume(ray *Ray, render_params *RenderParameters, jump_count 
 		*jump_count++
 
 		sdf := render_params.geo.Sdf(ray.origin)
+
+		// distort the shape
+		// var x = int(32.0*ray.origin.X + render_params.time*8.0)
+		// var y = int(32.0*ray.origin.Y + render_params.time*8.0)
+		// sdf += render_params.noises.tex_values.getWrap(x, y)
+		// sdf += render_params.noises.perlin_values.getFromVectorWrap(ray.origin.Scale(0.2).AddScalar(0.2 * render_params.time))
 
 		if sdf <= 0 {
 			ray.origin = ray.origin.Add(ray.dir.Scale(sdf)) // move back to the beginning of the volume
