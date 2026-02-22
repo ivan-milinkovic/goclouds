@@ -35,10 +35,10 @@ func (dm *Matrix2D[T]) getWrap(x, y int) T {
 	ix := x % dm.W
 	iy := y % dm.H
 	if ix < 0 {
-		ix = dm.W - ix
+		ix = dm.W - (-ix)
 	}
 	if iy < 0 {
-		iy = dm.H - iy
+		iy = dm.H - (-iy)
 	}
 	return dm.values[iy*dm.W+ix]
 }
