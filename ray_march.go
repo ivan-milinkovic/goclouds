@@ -373,7 +373,7 @@ func march_through_volume_to_light(
 		}
 		abs_sdf := math.Abs(sdf)
 		ds := min(abs_sdf, res_step)
-		ds = max(res_step, 0) // must not be zero
+		ds = max(ds, 0) // must not be zero
 		acc_sdf += abs_sdf
 		acc_mass += sample_density(point.Scale(1/geo_size), noises, time) * ds
 
